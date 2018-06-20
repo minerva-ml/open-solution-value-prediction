@@ -93,5 +93,9 @@ def make_transformer(func, output_name):
     return StaticTransformer()
 
 
-def log_mean_squared_error(y_true, y_pred):
+def root_mean_squared_error(y_true, y_pred):
+    return np.sqrt(mean_squared_error(y_true, y_pred))
+
+
+def log_root_mean_squared_error(y_true, y_pred):
     return np.sqrt(mean_squared_error(np.log(1 + y_true), np.log(1 + y_pred)))

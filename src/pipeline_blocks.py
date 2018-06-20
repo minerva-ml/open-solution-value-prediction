@@ -1,11 +1,10 @@
 import numpy as np
-from sklearn.metrics import mean_squared_error
 from steppy.adapter import Adapter, E
 from steppy.base import Step, BaseTransformer
 
 from . import feature_extraction as fe
 from .hyperparameter_tuning import RandomSearchOptimizer, NeptuneMonitor, PersistResults
-from .utils import make_transformer
+from .utils import make_transformer, root_mean_squared_error
 from .models import LightGBM
 
 
@@ -30,7 +29,7 @@ def classifier_light_gbm(features, config, train_mode, **kwargs):
                                                 params=config.light_gbm,
                                                 train_input_keys=[],
                                                 valid_input_keys=['X_valid', 'y_valid'],
-                                                score_func=mean_squared_error,
+                                                score_func=root_mean_squared_error,
                                                 maximize=False,
                                                 n_runs=config.random_search.light_gbm.n_runs,
                                                 callbacks=[

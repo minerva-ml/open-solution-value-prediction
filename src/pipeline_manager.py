@@ -7,7 +7,7 @@ from sklearn.model_selection import train_test_split
 
 from . import pipeline_config as cfg
 from .pipelines import PIPELINES
-from .utils import init_logger, read_params, set_seed, create_submission, verify_submission, log_mean_squared_error
+from .utils import init_logger, read_params, set_seed, create_submission, verify_submission, log_root_mean_squared_error
 
 set_seed(cfg.RANDOM_SEED)
 logger = init_logger()
@@ -97,7 +97,7 @@ def evaluate(pipeline_name, dev_mode):
     y_pred = output['prediction']
 
     logger.info('Calculating LRMSE on validation set')
-    score = log_mean_squared_error(y_true, y_pred)
+    score = log_root_mean_squared_error(y_true, y_pred)
     logger.info('LRMSE score on validation is {}'.format(score))
     ctx.channel_send('LRMSE', 0, score)
 

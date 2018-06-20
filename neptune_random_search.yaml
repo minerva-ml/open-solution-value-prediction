@@ -42,22 +42,22 @@ parameters:
   fillna_value: -1
 
 # Light GBM
-  lgbm_random_search_runs: 50
+  lgbm_random_search_runs: 500
   lgbm__device: cpu # gpu cpu
   lgbm__boosting_type: gbdt
   lgbm__objective: rmse
   lgbm__metric: rmse
   lgbm__number_boosting_rounds: 10000
   lgbm__early_stopping_rounds: 100
-  lgbm__learning_rate: '[0.0005, 0.1, "log-uniform"]'
-  lgbm__num_leaves: '[20, 50]'
-  lgbm__max_depth: '[7, 30]'
-  lgbm__min_child_samples: '[20, 45]'
+  lgbm__learning_rate: 0.01
+  lgbm__num_leaves: '[10, 50]'
+  lgbm__max_depth: '[1, 20]'
+  lgbm__min_child_samples: '[1, 20]'
   lgbm__max_bin: '[180, 500]' # at most 255 for device=gpu
   lgbm__subsample: '[0.8, 0.9, 0.99, 0.6, 0.7, "list"]'
-  lgbm__subsample_freq: 0
+  lgbm__subsample_freq: 1
   lgbm__colsample_bytree: 0.8
-  lgbm__min_child_weight: 4
+  lgbm__min_child_weight: '[1, 20]'
   lgbm__reg_lambda: '[0.0, 0.1, "uniform"]'
   lgbm__reg_alpha: '[0.0, 0.1, "uniform"]'
   lgbm__scale_pos_weight: 1
