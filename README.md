@@ -2,10 +2,14 @@
 
 This is an open solution to the [Santander Value Prediction Challenge](https://www.kaggle.com/c/santander-value-prediction-challenge).
 
-## The goal
-Create (entirely) open solution to this competition. We are opening both the code and process. Check [issues](https://github.com/minerva-ml/open-solution-value-prediction) and our [project board](https://github.com/minerva-ml/open-solution-value-prediction/projects/1). Rules are simple:
-* Clean code and extensible solution leads to the reproducible experimentations and better control over the improvements.
-* Open solution should establish solid benchmark and give good base for your custom ideas and experiments.
+## The purpose of the Open Solution
+We are building entirely open solution to this competition. Specifically:
+1. Check **live preview of our work** on public projects page: [Santander Value Prediction Challenge](https://app.neptune.ml/neptune-ml/Santander-Value-Prediction-Challenge).
+1. Source code and [issues](https://github.com/minerva-ml/open-solution-value-prediction/issues) are publicly available.
+
+Rules are simple:
+1. Clean code and extensible solution leads to the reproducible experimentations and better control over the improvements.
+1. Open solution should establish solid benchmark and give good base for your custom ideas and experiments.
 
 ## Installation
 ### Fast Track
