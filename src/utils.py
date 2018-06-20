@@ -7,22 +7,22 @@ import numpy as np
 import pandas as pd
 import yaml
 from attrdict import AttrDict
+from sklearn.metrics import mean_squared_error
 from steppy.base import BaseTransformer
 
 
 def create_submission(meta, predictions):
-    submission = pd.DataFrame({'SK_ID_CURR': meta['SK_ID_CURR'].tolist(),
-                               'TARGET': predictions
+    submission = pd.DataFrame({'ID': meta['ID'].tolist(),
+                               'target': predictions
                                })
     return submission
 
 
 def verify_submission(submission, sample_submission):
-
     assert submission.shape == sample_submission.shape, \
         'Expected submission to have shape {} but got {}'.format(sample_submission.shape, submission.shape)
 
-    for submission_id, correct_id in zip(submission['SK_ID_CURR'].values, sample_submission['SK_ID_CURR'].values):
+    for submission_id, correct_id in zip(submission['ID'].values, sample_submission['ID'].values):
         assert correct_id == submission_id, \
             'Wrong id: expected {} but got {}'.format(correct_id, submission_id)
 
@@ -49,12 +49,9 @@ def init_logger():
     return logger
 
 
-def read_params(ctx):
+def read_params(ctx, fallback_file):
     if ctx.params.__class__.__name__ == 'OfflineContextParams':
-        try:
-            neptune_config = read_yaml('neptune.yaml')
-        except FileNotFoundError:
-            neptune_config = read_yaml('../neptune.yaml')
+        neptune_config = read_yaml(fallback_file)
         params = neptune_config.parameters
     else:
         params = ctx.params
@@ -87,16 +84,14 @@ def set_seed(seed=90210):
     np.random.seed(seed)
 
 
-class ToNumpyLabel(BaseTransformer):
-    def __init__(self, **kwargs):
-        super().__init__()
-        self.y = None
+def make_transformer(func, output_name):
+    class StaticTransformer(BaseTransformer):
+        def transform(self, *args, **kwargs):
+            out = func(*args, **kwargs)
+            return {output_name: out}
 
-    def fit(self, y, **kwargs):
-        self.y = y[0].values.reshape(-1)
-        return self
+    return StaticTransformer()
 
-    def transform(self, **kwargs):
-        if self.y.any():
-            return {'y': self.y}
-        return {}
+
+def log_mean_squared_error(y_true, y_pred):
+    return mean_squared_error(np.log(1 + y_true), np.log(1 + y_pred))

@@ -22,12 +22,12 @@ parameters:
 # Data
   train_filepath:                 YOUR/PATH/TO/train.csv
   test_filepath:                  YOUR/PATH/TO/test.csv
-  sample_submission_filepath:     YOUR/PATH/TO/sample_submission.csv
+  sample_submission_filepath: YOUR/PATH/TO/test.csv/sample_submission.csv
   experiment_directory:           YOUR/PATH/WORKDIR
 
 # Kaggle
   kaggle_api: 0
-  kaggle_message: 'solution-2'
+  kaggle_message: 'solution-1'
 
 # Data preparation
   validation_size: 0.2
@@ -45,8 +45,8 @@ parameters:
   lgbm_random_search_runs: 50
   lgbm__device: cpu # gpu cpu
   lgbm__boosting_type: gbdt
-  lgbm__objective: binary
-  lgbm__metric: auc
+  lgbm__objective: rmse
+  lgbm__metric: rmse
   lgbm__number_boosting_rounds: 10000
   lgbm__early_stopping_rounds: 100
   lgbm__learning_rate: '[0.0005, 0.1, "log-uniform"]'
@@ -61,53 +61,3 @@ parameters:
   lgbm__reg_lambda: '[0.0, 0.1, "uniform"]'
   lgbm__reg_alpha: '[0.0, 0.1, "uniform"]'
   lgbm__scale_pos_weight: 1
-
-# XGBoost
-  xgb_random_search_runs: 50
-  xgb__booster: gbtree
-  xgb__tree_method: hist # gpu_hist  # auto  hist
-  xgb__objective: binary:logistic
-  xgb__eval_metric: auc
-  xgb__nrounds: 10000
-  xgb__early_stopping_rounds: 100
-  xgb__eta: '[0.001, 0.1, "log-uniform"]'
-  xgb__max_leaves: '[21, 41, "choice"]'
-  xgb__max_depth: 16
-  xgb__max_bin: '[155, 355, "choice"]'
-  xgb__subsample: '[0.5, 1., "uniform"]'
-  xgb__colsample_bytree: '[0.5, 1., "uniform"]'
-  xgb__colsample_bylevel: 1
-  xgb__min_child_weight: 4
-  xgb__lambda: '[0.00001, 1.0, "log-uniform"]'
-  xgb__alpha: '[0.00001, 1.0, "log-uniform"]'
-  xgb__scale_pos_weight: 1
-
-# Random forest
-  rf_random_search_runs: 50
-  rf__n_estimators: '[100, 500]'
-  rf__criterion: '["gini", "entropy", "list"]'
-  rf__max_features: '[0.01, 0.5, "uniform"]'
-  rf__min_samples_split: '[2, 50]'
-  rf__min_samples_leaf: '[1, 50]'
-  rf__class_weight: '[None, "balanced_subsample", "balanced", "list"]'
-
-# Logistic regression
-  lr_random_search_runs: 50
-  lr__penalty: '["l2", "l1", "list"]'
-  lr__tol: '[0.00001, 0.01, "log-uniform"]'
-  lr__C: '[0.1, 100, "log-uniform"]'
-  lr__fit_intercept: '[0, 1, "list"]'
-  lr__class_weight: '[None, "balanced", "list"]'
-  lr__solver: '["liblinear", "saga", "list"]'
-  lr__max_iter: '[100, 1000, 10000, 50000, "list"]'
-
-# SVC
-  svc_random_search_runs: 50
-  svc__kernel: '["poly", "rbf", "sigmoid", "list"]'
-  svc__C: '[0.1, 100, "log-uniform"]'
-  svc__degree: '[2, 7]'
-  svc__gamma: auto
-  svc__coef0: '[0.0, 1.0, "uniform"]'
-  svc__probability: True
-  svc__tol: '[0.00001, 0.01, "log-uniform"]'
-  svc__max_iter: '[-1, 100, 1000, 10000, 50000, "list"]'
