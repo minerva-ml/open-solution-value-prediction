@@ -6,7 +6,7 @@ from steppy.base import Step, BaseTransformer
 from . import feature_extraction as fe
 from .hyperparameter_tuning import RandomSearchOptimizer, NeptuneMonitor, PersistResults
 from .utils import make_transformer
-from .misc import LightGBM
+from .models import LightGBM
 
 
 def classifier_light_gbm(features, config, train_mode, **kwargs):
@@ -81,9 +81,11 @@ def feature_extraction(config, train_mode, **kwargs):
     if train_mode:
         feature_by_type_split, feature_by_type_split_valid = _feature_by_type_splits(config, train_mode)
 
-        feature_combiner, feature_combiner_valid = _join_features(numerical_features=[feature_by_type_split],
-                                                                  numerical_features_valid=[
-                                                                      feature_by_type_split_valid],
+        log_num, log_num_valid = _numerical_transforms((feature_by_type_split, feature_by_type_split_valid),
+                                                       config, train_mode)
+
+        feature_combiner, feature_combiner_valid = _join_features(numerical_features=[log_num],
+                                                                  numerical_features_valid=[log_num_valid],
                                                                   categorical_features=[feature_by_type_split],
                                                                   categorical_features_valid=[
                                                                       feature_by_type_split_valid],
@@ -94,7 +96,9 @@ def feature_extraction(config, train_mode, **kwargs):
     else:
         feature_by_type_split = _feature_by_type_splits(config, train_mode)
 
-        feature_combiner = _join_features(numerical_features=[feature_by_type_split],
+        log_num = _numerical_transforms(feature_by_type_split, config, train_mode)
+
+        feature_combiner = _join_features(numerical_features=[log_num],
                                           numerical_features_valid=[],
                                           categorical_features=[feature_by_type_split],
                                           categorical_features_valid=[],
@@ -128,6 +132,31 @@ def _feature_by_type_splits(config, train_mode):
                                      experiment_directory=config.pipeline.experiment_directory)
 
     return feature_by_type_split
+
+
+def _numerical_transforms(dispatchers, config, train_mode, **kwargs):
+    if train_mode:
+        feature_by_type_split, feature_by_type_split_valid = dispatchers
+    else:
+        feature_by_type_split = dispatchers
+
+    log_num = Step(name='log_num',
+                   transformer=make_transformer(lambda x: np.log(x + 1), output_name='numerical_features'),
+                   input_steps=[feature_by_type_split],
+                   adapter=Adapter({'x': E(feature_by_type_split.name, 'numerical_features')}
+                                   ),
+                   experiment_directory=config.pipeline.experiment_directory, **kwargs)
+
+    if train_mode:
+        log_num_valid = Step(name='log_num_valid',
+                             transformer=log_num,
+                             input_steps=[feature_by_type_split_valid],
+                             adapter=Adapter({'x': E(feature_by_type_split_valid.name, 'numerical_features')}
+                                             ),
+                             experiment_directory=config.pipeline.experiment_directory, **kwargs)
+        return log_num, log_num_valid
+    else:
+        return log_num
 
 
 def _join_features(numerical_features,

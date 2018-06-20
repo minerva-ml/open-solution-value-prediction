@@ -30,7 +30,7 @@ parameters:
   kaggle_message: 'solution-1'
 
 # Data preparation
-  validation_size: 0.2
+  validation_size: 0.1
   shuffle: 1
 
 # Execution

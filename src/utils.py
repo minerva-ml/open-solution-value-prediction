@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 import random
 import sys
 
