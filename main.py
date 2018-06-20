@@ -58,11 +58,6 @@ def evaluate_predict(pipeline_name, submit_predictions, dev_mode):
     pipeline_manager.predict(pipeline_name, dev_mode, submit_predictions)
 
 
-@main.command()
-@click.option('-f', '--submission_filepath', help='filepath to json submission file', required=True)
-def submit_predictions(submission_filepath):
-    pipeline_manager.submit_predictions(submission_filepath)
-
 
 if __name__ == "__main__":
     main()

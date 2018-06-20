@@ -25,9 +25,6 @@ class PipelineManager():
     def predict(self, pipeline_name, dev_mode, submit_predictions):
         predict(pipeline_name, dev_mode, submit_predictions)
 
-    def submit_predictions(self, filepath):
-        submit_predictions(filepath)
-
 
 def train(pipeline_name, dev_mode):
     logger.info('TRAINING')
@@ -87,7 +84,7 @@ def evaluate(pipeline_name, dev_mode):
 
     y_true = valid_data_split[cfg.TARGET_COLUMN].values
     data = {'input': {'X': valid_data_split.drop(cfg.TARGET_COLUMN + cfg.ID_COLUMN, axis=1),
-                      'y': valid_data_split[cfg.TARGET_COLUMN].values.reshape(-1),
+                      'y': None,
                       },
             }
 
@@ -141,9 +138,5 @@ def predict(pipeline_name, dev_mode, submit_predictions):
 
         if submit_predictions and params.kaggle_api:
             logger.info('making Kaggle submit...')
-            submit_predictions(submission_filepath)
-
-
-def submit_predictions(submission_filepath):
-    os.system('kaggle competitions submit -c santander-value-prediction-challenge -f {} -m {}'
-              .format(submission_filepath, params.kaggle_message))
+            os.system('kaggle competitions submit -c santander-value-prediction-challenge -f {} -m {}'
+                      .format(submission_filepath, params.kaggle_message))

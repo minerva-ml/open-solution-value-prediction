@@ -87,11 +87,10 @@ def set_seed(seed=90210):
 def make_transformer(func, output_name):
     class StaticTransformer(BaseTransformer):
         def transform(self, *args, **kwargs):
-            out = func(*args, **kwargs)
-            return {output_name: out}
+            return {output_name: func(*args, **kwargs)}
 
     return StaticTransformer()
 
 
 def log_mean_squared_error(y_true, y_pred):
-    return mean_squared_error(np.log(1 + y_true), np.log(1 + y_pred))
+    return np.sqrt(mean_squared_error(np.log(1 + y_true), np.log(1 + y_pred)))
