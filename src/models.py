@@ -20,8 +20,9 @@ class LightGBM(BaseTransformer):
         self.training_params = ['number_boosting_rounds', 'early_stopping_rounds']
         self.evaluation_function = None
         if callback_config['run_with_callback']:
-            callback_config.pop('run_with_callback', None)
-            self.callbacks = callbacks(callback_config)
+            callback_config_params = callback_config.copy()
+            callback_config_params.pop('run_with_callback', None)
+            self.callbacks = callbacks(callback_config_params)
         else:
             self.callbacks = None
 
