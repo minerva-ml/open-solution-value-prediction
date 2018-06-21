@@ -164,12 +164,10 @@ def train_evaluate_predict_cv(pipeline_name, dev_mode, submit_predictions):
         train = pd.read_csv(params.train_filepath)
         test = pd.read_csv(params.test_filepath)
 
-    cv_label = train[cfg.TARGET_COLUMN].values
     cv = KFold(n_splits=params.n_cv_splits, shuffle=True, random_state=cfg.RANDOM_SEED)
-    cv.get_n_splits(cv_label)
 
     out_of_fold_train_predictions, out_of_fold_test_predictions, fold_scores = [], [], []
-    for fold_id, (train_idx, valid_idx) in enumerate(cv.split(cv_label)):
+    for fold_id, (train_idx, valid_idx) in enumerate(cv.split(train)):
         train_data_split, valid_data_split = train.iloc[train_idx], train.iloc[valid_idx]
 
         logger.info('Started fold {}'.format(fold_id))
