@@ -140,14 +140,14 @@ def predict(pipeline_name, dev_mode, submit_predictions):
         logger.info('submission persisted to {}'.format(submission_filepath))
         logger.info('submission head \n\n{}'.format(submission.head()))
 
-        submit_predictions(submission)
+        if submit_predictions and params.kaggle_api:
+            make_submission(submission)
 
 
-def submit_predictions(submission_filepath):
-    if submit_predictions and params.kaggle_api:
-        logger.info('making Kaggle submit...')
-        os.system('kaggle competitions submit -c santander-value-prediction-challenge -f {} -m {}'
-                  .format(submission_filepath, params.kaggle_message))
+def make_submission(submission_filepath):
+    logger.info('making Kaggle submit...')
+    os.system('kaggle competitions submit -c santander-value-prediction-challenge -f {} -m {}'
+              .format(submission_filepath, params.kaggle_message))
 
 
 def train_evaluate_predict_cv(pipeline_name, dev_mode, submit_predictions):
@@ -198,17 +198,24 @@ def train_evaluate_predict_cv(pipeline_name, dev_mode, submit_predictions):
     ctx.channel_send('LRMSE', 0, mean_score)
 
     logger.info('Saving predictions')
-    out_of_fold_train_predictions.to_csv(
-        os.path.join(params.experiment_directory, '{}_out_of_fold_train_predictions.csv'.format(pipeline_name)))
-    out_of_fold_test_predictions.to_csv(
-        os.path.join(params.experiment_directory, '{}_out_of_fold_test_predictions.csv'.format(pipeline_name)))
+    out_of_fold_train_predictions.to_csv(os.path.join(params.experiment_directory,
+                                                      '{}_out_of_fold_train_predictions.csv'.format(pipeline_name)),
+                                         index=None)
+    out_of_fold_test_predictions.to_csv(os.path.join(params.experiment_directory,
+                                                     '{}_out_of_fold_test_predictions.csv'.format(pipeline_name)),
+                                        index=None)
     test_aggregated_file_path = os.path.join(params.experiment_directory,
                                              '{}_test_predictions_{}.csv'.format(pipeline_name,
                                                                                  params.aggregation_method))
-    test_prediction_aggregated.to_csv(test_aggregated_file_path)
+    test_prediction_aggregated.to_csv(test_aggregated_file_path, index=None)
 
     if not dev_mode:
-        submit_predictions(test_aggregated_file_path)
+        logger.info('verifying submission...')
+        sample_submission = pd.read_csv(params.sample_submission_filepath)
+        verify_submission(test_prediction_aggregated, sample_submission)
+
+        if submit_predictions and params.kaggle_api:
+            make_submission(test_aggregated_file_path)
 
 
 def _fold_fit_loop(train_data_split, valid_data_split, test, fold_id, pipeline_name):
@@ -271,5 +278,7 @@ def _aggregate_test_prediction(out_of_fold_test_predictions):
     prediction_column = [col for col in out_of_fold_test_predictions.columns if '_prediction' in col]
     test_prediction_aggregated = out_of_fold_test_predictions.groupby(cfg.ID_COLUMN)[prediction_column].apply(
         agg_methods[params.aggregation_method]).reset_index()
+
+    test_prediction_aggregated.columns = [cfg.ID_COLUMN + cfg.TARGET_COLUMN]
 
     return test_prediction_aggregated
