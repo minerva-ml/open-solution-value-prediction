@@ -8,16 +8,16 @@ from .utils import make_transformer, root_mean_squared_error
 from .models import LightGBM
 
 
-def classifier_light_gbm(features, config, train_mode, **kwargs):
+def classifier_light_gbm(features, config, train_mode, suffix='', **kwargs):
     if train_mode:
 
-        log_target = Step(name='log_target',
+        log_target = Step(name='log_target{}'.format(suffix),
                           transformer=make_transformer(lambda x: np.log(x + 1), output_name='y'),
                           input_data=['input'],
                           adapter=Adapter({'x': E('input', 'y')}),
                           experiment_directory=config.pipeline.experiment_directory, **kwargs)
 
-        log_target_valid = Step(name='log_target_valid',
+        log_target_valid = Step(name='log_target_valid{}'.format(suffix),
                                 transformer=log_target,
                                 input_data=['input'],
                                 adapter=Adapter({'x': E('input', 'y_valid')}),
@@ -41,7 +41,7 @@ def classifier_light_gbm(features, config, train_mode, **kwargs):
         else:
             transformer = LightGBM(**config.light_gbm)
 
-        light_gbm = Step(name='light_gbm',
+        light_gbm = Step(name='light_gbm{}'.format(suffix),
                          transformer=transformer,
                          input_data=['input'],
                          input_steps=[features_train, features_valid, log_target, log_target_valid],
@@ -55,20 +55,20 @@ def classifier_light_gbm(features, config, train_mode, **kwargs):
                          experiment_directory=config.pipeline.experiment_directory,
                          **kwargs)
     else:
-        light_gbm = Step(name='light_gbm',
+        light_gbm = Step(name='light_gbm{}'.format(suffix),
                          transformer=LightGBM(**config.light_gbm),
                          input_steps=[features],
                          adapter=Adapter({'X': E(features.name, 'features')}),
                          experiment_directory=config.pipeline.experiment_directory,
                          **kwargs)
 
-    output = exp_target(light_gbm, config, **kwargs)
+    output = exp_target(light_gbm, config, suffix, **kwargs)
 
     return output
 
 
-def exp_target(model_output, config, **kwargs):
-    exp_target = Step(name='exp_target',
+def exp_target(model_output, config, suffix, **kwargs):
+    exp_target = Step(name='exp_target{}'.format(suffix),
                       transformer=make_transformer(lambda x: np.exp(x) - 1, output_name='prediction'),
                       input_steps=[model_output],
                       adapter=Adapter({'x': E(model_output.name, 'prediction')}),
@@ -76,12 +76,12 @@ def exp_target(model_output, config, **kwargs):
     return exp_target
 
 
-def feature_extraction(config, train_mode, **kwargs):
+def feature_extraction(config, train_mode, suffix, **kwargs):
     if train_mode:
-        feature_by_type_split, feature_by_type_split_valid = _feature_by_type_splits(config, train_mode)
+        feature_by_type_split, feature_by_type_split_valid = _feature_by_type_splits(config, train_mode, suffix)
 
         log_num, log_num_valid = _numerical_transforms((feature_by_type_split, feature_by_type_split_valid),
-                                                       config, train_mode)
+                                                       config, train_mode, suffix)
 
         feature_combiner, feature_combiner_valid = _join_features(numerical_features=[log_num],
                                                                   numerical_features_valid=[log_num_valid],
@@ -89,33 +89,35 @@ def feature_extraction(config, train_mode, **kwargs):
                                                                   categorical_features_valid=[
                                                                       feature_by_type_split_valid],
                                                                   config=config,
-                                                                  train_mode=train_mode, **kwargs)
+                                                                  train_mode=train_mode,
+                                                                  suffix=suffix, **kwargs)
 
         return feature_combiner, feature_combiner_valid
     else:
-        feature_by_type_split = _feature_by_type_splits(config, train_mode)
+        feature_by_type_split = _feature_by_type_splits(config, train_mode, suffix)
 
-        log_num = _numerical_transforms(feature_by_type_split, config, train_mode)
+        log_num = _numerical_transforms(feature_by_type_split, config, train_mode, suffix)
 
         feature_combiner = _join_features(numerical_features=[log_num],
                                           numerical_features_valid=[],
                                           categorical_features=[feature_by_type_split],
                                           categorical_features_valid=[],
                                           config=config,
-                                          train_mode=train_mode, **kwargs)
+                                          train_mode=train_mode,
+                                          suffix=suffix, **kwargs)
 
         return feature_combiner
 
 
-def _feature_by_type_splits(config, train_mode):
+def _feature_by_type_splits(config, train_mode, suffix):
     if train_mode:
-        feature_by_type_split = Step(name='inferred_type_splitter',
+        feature_by_type_split = Step(name='inferred_type_splitter{}'.format(suffix),
                                      transformer=fe.InferredTypeSplitter(),
                                      input_data=['input'],
                                      adapter=Adapter({'X': E('input', 'X')}),
                                      experiment_directory=config.pipeline.experiment_directory)
 
-        feature_by_type_split_valid = Step(name='inferred_type_splitter_valid',
+        feature_by_type_split_valid = Step(name='inferred_type_splitter_valid{}'.format(suffix),
                                            transformer=feature_by_type_split,
                                            input_data=['input'],
                                            adapter=Adapter({'X': E('input', 'X_valid')}),
@@ -124,7 +126,7 @@ def _feature_by_type_splits(config, train_mode):
         return feature_by_type_split, feature_by_type_split_valid
 
     else:
-        feature_by_type_split = Step(name='inferred_type_splitter',
+        feature_by_type_split = Step(name='inferred_type_splitter{}'.format(suffix),
                                      transformer=fe.InferredTypeSplitter(),
                                      input_data=['input'],
                                      adapter=Adapter({'X': E('input', 'X')}),
@@ -133,13 +135,13 @@ def _feature_by_type_splits(config, train_mode):
     return feature_by_type_split
 
 
-def _numerical_transforms(dispatchers, config, train_mode, **kwargs):
+def _numerical_transforms(dispatchers, config, train_mode, suffix, **kwargs):
     if train_mode:
         feature_by_type_split, feature_by_type_split_valid = dispatchers
     else:
         feature_by_type_split = dispatchers
 
-    log_num = Step(name='log_num',
+    log_num = Step(name='log_num{}'.format(suffix),
                    transformer=make_transformer(lambda x: np.log(x + 1), output_name='numerical_features'),
                    input_steps=[feature_by_type_split],
                    adapter=Adapter({'x': E(feature_by_type_split.name, 'numerical_features')}
@@ -147,7 +149,7 @@ def _numerical_transforms(dispatchers, config, train_mode, **kwargs):
                    experiment_directory=config.pipeline.experiment_directory, **kwargs)
 
     if train_mode:
-        log_num_valid = Step(name='log_num_valid',
+        log_num_valid = Step(name='log_num_valid{}'.format(suffix),
                              transformer=log_num,
                              input_steps=[feature_by_type_split_valid],
                              adapter=Adapter({'x': E(feature_by_type_split_valid.name, 'numerical_features')}
@@ -162,8 +164,8 @@ def _join_features(numerical_features,
                    numerical_features_valid,
                    categorical_features,
                    categorical_features_valid,
-                   config, train_mode, **kwargs):
-    feature_joiner = Step(name='feature_joiner',
+                   config, train_mode, suffix, **kwargs):
+    feature_joiner = Step(name='feature_joiner{}'.format(suffix),
                           transformer=fe.FeatureJoiner(),
                           input_steps=numerical_features + categorical_features,
                           adapter=Adapter({
@@ -176,7 +178,7 @@ def _join_features(numerical_features,
                           **kwargs)
 
     if train_mode:
-        feature_joiner_valid = Step(name='feature_joiner_valid',
+        feature_joiner_valid = Step(name='feature_joiner_valid{}'.format(suffix),
                                     transformer=feature_joiner,
                                     input_steps=numerical_features_valid + categorical_features_valid,
                                     adapter=Adapter({

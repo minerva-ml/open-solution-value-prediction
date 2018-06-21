@@ -30,6 +30,7 @@ parameters:
   kaggle_message: 'solution-1'
 
 # Data preparation
+  n_cv_splits: 5
   validation_size: 0.1
   shuffle: 1
 
@@ -61,3 +62,6 @@ parameters:
   lgbm__reg_lambda: 0
   lgbm__reg_alpha: 0
   lgbm__scale_pos_weight: 1
+
+# Postprocessing
+  aggregation_method: mean
