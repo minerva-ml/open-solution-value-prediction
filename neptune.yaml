@@ -26,11 +26,11 @@ parameters:
   experiment_directory:           YOUR/PATH/WORKDIR
 
 # Kaggle
-  kaggle_api: 0
+  kaggle_api: 1
   kaggle_message: 'solution-1'
 
 # Data preparation
-  n_cv_splits: 5
+  n_cv_splits: 10
   validation_size: 0.1
   shuffle: 1
 
