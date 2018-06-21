@@ -3,6 +3,7 @@ from steppy.adapter import Adapter, E
 from steppy.base import Step, BaseTransformer
 
 from . import feature_extraction as fe
+from .feature_selection import LassoFeatureSelection
 from .hyperparameter_tuning import RandomSearchOptimizer, NeptuneMonitor, PersistResults
 from .utils import make_transformer, root_mean_squared_error
 from .models import LightGBM
@@ -24,6 +25,10 @@ def classifier_light_gbm(features, config, train_mode, suffix='', **kwargs):
                                 experiment_directory=config.pipeline.experiment_directory, **kwargs)
 
         features_train, features_valid = features
+
+        selected_features, selected_features_valid = _select_features((features_train, features_valid),
+                                                                      config, train_mode, suffix, **kwargs)
+
         if config.random_search.light_gbm.n_runs:
             transformer = RandomSearchOptimizer(TransformerClass=LightGBM,
                                                 params=config.light_gbm,
@@ -44,21 +49,23 @@ def classifier_light_gbm(features, config, train_mode, suffix='', **kwargs):
         light_gbm = Step(name='light_gbm{}'.format(suffix),
                          transformer=transformer,
                          input_data=['input'],
-                         input_steps=[features_train, features_valid, log_target, log_target_valid],
-                         adapter=Adapter({'X': E(features_train.name, 'features'),
+                         input_steps=[selected_features, selected_features_valid, log_target, log_target_valid],
+                         adapter=Adapter({'X': E(selected_features.name, 'features'),
                                           'y': E(log_target.name, 'y'),
-                                          'feature_names': E(features_train.name, 'feature_names'),
-                                          'categorical_features': E(features_train.name, 'categorical_features'),
-                                          'X_valid': E(features_valid.name, 'features'),
+                                          'feature_names': E(selected_features.name, 'feature_names'),
+                                          'categorical_features': E(selected_features.name, 'categorical_features'),
+                                          'X_valid': E(selected_features_valid.name, 'features'),
                                           'y_valid': E(log_target_valid.name, 'y'),
                                           }),
                          experiment_directory=config.pipeline.experiment_directory,
                          **kwargs)
     else:
+        selected_features = _select_features(features, config, train_mode, suffix, **kwargs)
+
         light_gbm = Step(name='light_gbm{}'.format(suffix),
                          transformer=LightGBM(**config.light_gbm),
-                         input_steps=[features],
-                         adapter=Adapter({'X': E(features.name, 'features')}),
+                         input_steps=[selected_features],
+                         adapter=Adapter({'X': E(selected_features.name, 'features')}),
                          experiment_directory=config.pipeline.experiment_directory,
                          **kwargs)
 
@@ -91,7 +98,6 @@ def feature_extraction(config, train_mode, suffix, **kwargs):
                                                                   config=config,
                                                                   train_mode=train_mode,
                                                                   suffix=suffix, **kwargs)
-
         return feature_combiner, feature_combiner_valid
     else:
         feature_by_type_split = _feature_by_type_splits(config, train_mode, suffix)
@@ -158,6 +164,42 @@ def _numerical_transforms(dispatchers, config, train_mode, suffix, **kwargs):
         return log_num, log_num_valid
     else:
         return log_num
+
+
+def _select_features(features, config, train_mode, suffix, **kwargs):
+    if train_mode:
+        features, features_valid = features
+
+    if train_mode:
+        lasso_selector = Step(name='lasso_selector{}'.format(suffix),
+                              transformer=LassoFeatureSelection(**config.lasso_feature_selector),
+                              input_data=['input'],
+                              input_steps=[features],
+                              adapter=Adapter({'target': E('input', 'y'),
+                                               'features': E(features.name, 'features'),
+                                               'feature_names': E(features.name, 'feature_names'),
+                                               'categorical_features': E(features.name, 'categorical_features')
+                                               }
+                                              ),
+                              experiment_directory=config.pipeline.experiment_directory, **kwargs)
+
+        lasso_selector_valid = Step(name='lasso_selector_valid{}'.format(suffix),
+                                    transformer=lasso_selector,
+                                    input_steps=[features_valid],
+                                    adapter=Adapter({'features': E(features_valid.name, 'features')}
+                                                    ),
+                                    experiment_directory=config.pipeline.experiment_directory, **kwargs)
+
+        return lasso_selector, lasso_selector_valid
+    else:
+        lasso_selector = Step(name='lasso_selector{}'.format(suffix),
+                              transformer=LassoFeatureSelection(**config.lasso_feature_selector),
+                              input_steps=[features],
+                              adapter=Adapter({'features': E(features.name, 'features')}
+                                              ),
+                              experiment_directory=config.pipeline.experiment_directory, **kwargs)
+
+        return lasso_selector
 
 
 def _join_features(numerical_features,

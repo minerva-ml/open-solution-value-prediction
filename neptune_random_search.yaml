@@ -38,8 +38,9 @@ parameters:
   num_workers: 16
   verbose: 1
 
-# Preprocessing
-  fillna_value: -1
+# Feature Selection
+  lasso_feature_selector__threshold: 1e-5
+  lasso_feature_selector__n_alphas: 10
 
 # Light GBM
   lgbm_random_search_runs: 500

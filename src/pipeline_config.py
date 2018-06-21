@@ -18,6 +18,12 @@ SOLUTION_CONFIG = AttrDict({
     'pipeline': {'experiment_directory': params.experiment_directory
                  },
 
+    'lasso_feature_selector': {'n_jobs': params.num_workers,
+                               'threshold': params.lasso_feature_selector__threshold,
+                               'n_alphas': params.lasso_feature_selector__n_alphas,
+                               'random_state': RANDOM_SEED,
+                               },
+
     'light_gbm': {'device': parameter_eval(params.lgbm__device),
                   'boosting_type': parameter_eval(params.lgbm__boosting_type),
                   'objective': parameter_eval(params.lgbm__objective),
