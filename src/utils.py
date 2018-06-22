@@ -94,6 +94,12 @@ def make_transformer(func, output_name):
     return StaticTransformer()
 
 
+def to_pandas(x, column_prefix):
+    col_num = x.shape[1]
+    df = pd.DataFrame(x, columns=['{}_{}'.format(column_prefix, i) for i in range(col_num)])
+    return df
+
+
 def root_mean_squared_error(y_true, y_pred):
     return np.sqrt(mean_squared_error(y_true, y_pred))
 
