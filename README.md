@@ -1,7 +1,7 @@
 # Santander Value Prediction Challenge: Open Solution
 
 [![Join the chat at https://gitter.im/minerva-ml/open-solution-value-prediction](https://badges.gitter.im/minerva-ml/open-solution-value-prediction.svg)](https://gitter.im/minerva-ml/open-solution-value-prediction?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-[![license](https://img.shields.io/github/license/mashape/apistatus.svg)](https://github.com/minerva-ml/open-solution-value-prediction/blob/master/LICENSE)
+[![license](https://img.shields.io/github/license/mashape/apistatus.svg?maxAge=2592000)](https://github.com/minerva-ml/open-solution-value-prediction/blob/master/LICENSE)
 
 This is an open solution to the [Santander Value Prediction Challenge](https://www.kaggle.com/c/santander-value-prediction-challenge).
 
