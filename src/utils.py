@@ -9,6 +9,7 @@ import pandas as pd
 import yaml
 from attrdict import AttrDict
 from sklearn.metrics import mean_squared_error
+from sklearn.model_selection import KFold, BaseCrossValidator
 from steppy.base import BaseTransformer
 
 
@@ -105,3 +106,24 @@ def root_mean_squared_error(y_true, y_pred):
 
 def log_root_mean_squared_error(y_true, y_pred):
     return np.sqrt(mean_squared_error(np.log(1 + y_true), np.log(1 + y_pred)))
+
+
+class KFoldByTargetValue(BaseCrossValidator):
+    def __init__(self, n_splits=3, shuffle=False, random_state=None):
+        self.n_splits = n_splits
+        self.shuffle = shuffle
+        self.random_state = random_state
+
+    def _iter_test_indices(self, X, y=None, groups=None):
+        n_samples = X.shape[0]
+        indices = np.arange(n_samples)
+
+        sorted_idx_vals = sorted(zip(indices, X), key=lambda x: x[1])
+        indices = [idx for idx, val in sorted_idx_vals]
+
+        for split_start in range(self.n_splits):
+            split_indeces = indices[split_start::self.n_splits]
+            yield split_indeces
+
+    def get_n_splits(self, X=None, y=None, groups=None):
+        return self.n_split
