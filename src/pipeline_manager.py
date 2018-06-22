@@ -5,11 +5,12 @@ import numpy as np
 import pandas as pd
 from scipy.stats import gmean
 from deepsense import neptune
-from sklearn.model_selection import train_test_split, KFold
+from sklearn.model_selection import train_test_split
 
 from . import pipeline_config as cfg
 from .pipelines import PIPELINES
-from .utils import init_logger, read_params, set_seed, create_submission, verify_submission, log_root_mean_squared_error
+from .utils import init_logger, read_params, set_seed, create_submission, verify_submission, \
+    log_root_mean_squared_error, KFoldByTargetValue
 
 set_seed(cfg.RANDOM_SEED)
 logger = init_logger()
@@ -164,12 +165,11 @@ def train_evaluate_predict_cv(pipeline_name, dev_mode, submit_predictions):
         train = pd.read_csv(params.train_filepath)
         test = pd.read_csv(params.test_filepath)
 
-    cv_label = train[cfg.TARGET_COLUMN].values
-    cv = KFold(n_splits=params.n_cv_splits, shuffle=True, random_state=cfg.RANDOM_SEED)
-    cv.get_n_splits(cv_label)
+    cv = KFoldByTargetValue(n_splits=params.n_cv_splits, shuffle=True, random_state=cfg.RANDOM_SEED)
+    target_values = train[cfg.TARGET_COLUMN].values.reshape(-1)
 
     out_of_fold_train_predictions, out_of_fold_test_predictions, fold_scores = [], [], []
-    for fold_id, (train_idx, valid_idx) in enumerate(cv.split(cv_label)):
+    for fold_id, (train_idx, valid_idx) in enumerate(cv.split(target_values)):
         train_data_split, valid_data_split = train.iloc[train_idx], train.iloc[valid_idx]
 
         logger.info('Started fold {}'.format(fold_id))
@@ -192,10 +192,11 @@ def train_evaluate_predict_cv(pipeline_name, dev_mode, submit_predictions):
     out_of_fold_test_predictions = pd.concat(out_of_fold_test_predictions, axis=0)
 
     test_prediction_aggregated = _aggregate_test_prediction(out_of_fold_test_predictions)
-    mean_score = np.mean(fold_scores)
+    score_mean, score_std = np.mean(fold_scores), np.std(fold_scores)
 
-    logger.info('LRMSE {}'.format(mean_score))
-    ctx.channel_send('LRMSE', 0, mean_score)
+    logger.info('LRMSE mean {}, LRMSE std {}'.format(score_mean, score_std))
+    ctx.channel_send('LRMSE', 0, score_mean)
+    ctx.channel_send('LRMSE STD', 0, score_std)
 
     logger.info('Saving predictions')
     out_of_fold_train_predictions.to_csv(os.path.join(params.experiment_directory,

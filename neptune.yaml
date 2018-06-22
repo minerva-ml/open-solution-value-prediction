@@ -51,16 +51,16 @@ parameters:
   lgbm__number_boosting_rounds: 10000
   lgbm__early_stopping_rounds: 100
   lgbm__learning_rate: 0.01
-  lgbm__num_leaves: 32
-  lgbm__max_depth: 10
+  lgbm__num_leaves: 180
+  lgbm__max_depth: -1
   lgbm__min_child_samples: 1
-  lgbm__max_bin: 300  # at most 255 for device=gpu
-  lgbm__subsample: 0.8
-  lgbm__subsample_freq: 1
-  lgbm__colsample_bytree: 0.8
-  lgbm__min_child_weight: 1
-  lgbm__reg_lambda: 0
-  lgbm__reg_alpha: 0
+  lgbm__max_bin: 255  # at most 255 for device=gpu
+  lgbm__subsample: 0.5
+  lgbm__subsample_freq: 4
+  lgbm__colsample_bytree: 0.5
+  lgbm__min_child_weight: 10
+  lgbm__reg_lambda: 0.1
+  lgbm__reg_alpha: 0.0
   lgbm__scale_pos_weight: 1
 
 # Postprocessing
