@@ -94,6 +94,13 @@ def data_cleaning(config, train_mode, suffix, **kwargs):
                                           ),
                           experiment_directory=config.pipeline.experiment_directory, **kwargs)
 
+    log_num = Step(name='log_num{}'.format(suffix),
+                   transformer=make_transformer(lambda x: np.log(x + 1), output_name='numerical_features'),
+                   input_steps=[drop_duplicate],
+                   adapter=Adapter({'x': E(drop_duplicate.name, 'X')}
+                                   ),
+                   experiment_directory=config.pipeline.experiment_directory, **kwargs)
+
     if train_mode:
         drop_constant_valid = Step(name='drop_constant_valid{}'.format(suffix),
                                    transformer=drop_constant,
@@ -110,6 +117,14 @@ def data_cleaning(config, train_mode, suffix, **kwargs):
                                                      }
                                                     ),
                                     experiment_directory=config.pipeline.experiment_directory, **kwargs)
+
+        log_num_valid = Step(name='log_num_valid{}'.format(suffix),
+                             transformer=log_num,
+                             input_steps=[drop_duplicate],
+                             adapter=Adapter({'x': E(drop_duplicate.name, 'X')}
+                                             ),
+                             experiment_directory=config.pipeline.experiment_directory, **kwargs)
+
         return drop_duplicate, drop_duplicate_valid
     else:
         return drop_duplicate
@@ -118,20 +133,14 @@ def data_cleaning(config, train_mode, suffix, **kwargs):
 def feature_extraction(data_cleaned, config, train_mode, suffix, **kwargs):
     feature_decomposers = [
         (TruncatedSVD, config.truncated_svd, 'trunc_svd'),
-        # (fe.PCA, config.pca, 'pca'),
-        # (fe.FastICA, config.fast_ica, 'fast_ica'),
-        # (fe.FactorAnalysis, config.factor_analysis, 'factor_analysis'),
-        # (fe.GaussianRandomProjection, config.gaussian_random_projection, 'grp'),
-        # (fe.SparseRandomProjection, config.sparse_random_projection, 'srp'),
+        (fe.PCA, config.pca, 'pca'),
+        (fe.FastICA, config.fast_ica, 'fast_ica'),
+        (fe.FactorAnalysis, config.factor_analysis, 'factor_analysis'),
+        (fe.GaussianRandomProjection, config.gaussian_random_projection, 'grp'),
+        (fe.SparseRandomProjection, config.sparse_random_projection, 'srp'),
     ]
 
     if train_mode:
-        feature_by_type_split, feature_by_type_split_valid = _feature_by_type_splits(data_cleaned, config, train_mode,
-                                                                                     suffix)
-
-        log_num, log_num_valid = _numerical_transforms((feature_by_type_split, feature_by_type_split_valid),
-                                                       config, train_mode, suffix)
-
         decomposed_features, decomposed_features_valid = [], []
         for decomposer in feature_decomposers:
             decomposed_feature, decomposed_feature_valid = _decomposition(decomposer, data_cleaned, config, train_mode,
@@ -151,10 +160,6 @@ def feature_extraction(data_cleaned, config, train_mode, suffix, **kwargs):
                                                                   suffix=suffix, **kwargs)
         return feature_combiner, feature_combiner_valid
     else:
-        feature_by_type_split = _feature_by_type_splits(data_cleaned, config, train_mode, suffix)
-
-        log_num = _numerical_transforms(feature_by_type_split, config, train_mode, suffix)
-
         decomposed_features = []
         for decomposer in feature_decomposers:
             decomposed_feature = _decomposition(decomposer, data_cleaned, config, train_mode,
@@ -231,31 +236,6 @@ def _feature_by_type_splits(features_cleaned, config, train_mode, suffix):
         return feature_by_type_split, feature_by_type_split_valid
     else:
         return feature_by_type_split
-
-
-def _numerical_transforms(dispatchers, config, train_mode, suffix, **kwargs):
-    if train_mode:
-        feature_by_type_split, feature_by_type_split_valid = dispatchers
-    else:
-        feature_by_type_split = dispatchers
-
-    log_num = Step(name='log_num{}'.format(suffix),
-                   transformer=make_transformer(lambda x: np.log(x + 1), output_name='numerical_features'),
-                   input_steps=[feature_by_type_split],
-                   adapter=Adapter({'x': E(feature_by_type_split.name, 'numerical_features')}
-                                   ),
-                   experiment_directory=config.pipeline.experiment_directory, **kwargs)
-
-    if train_mode:
-        log_num_valid = Step(name='log_num_valid{}'.format(suffix),
-                             transformer=log_num,
-                             input_steps=[feature_by_type_split_valid],
-                             adapter=Adapter({'x': E(feature_by_type_split_valid.name, 'numerical_features')}
-                                             ),
-                             experiment_directory=config.pipeline.experiment_directory, **kwargs)
-        return log_num, log_num_valid
-    else:
-        return log_num
 
 
 def _decomposition(decomposer_config, data_cleaned, config, train_mode, suffix, **kwargs):
