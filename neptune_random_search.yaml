@@ -61,3 +61,6 @@ parameters:
   lgbm__reg_lambda: '[0.0, 0.1, "uniform"]'
   lgbm__reg_alpha: '[0.0, 0.1, "uniform"]'
   lgbm__scale_pos_weight: 1
+
+# Postprocessing
+  aggregation_method: mean
