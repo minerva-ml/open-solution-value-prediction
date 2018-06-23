@@ -5,8 +5,9 @@ from steppy.adapter import Adapter, E
 from steppy.base import Step, BaseTransformer
 from toolkit.preprocessing.misc import TruncatedSVD
 
+from . import data_cleaning as dc
 from . import feature_extraction as fe
-from .feature_selection import DropDuplicateColumns, VarianceThreshold, LassoFeatureSelection
+from . import feature_selection as fs
 from .hyperparameter_tuning import RandomSearchOptimizer, NeptuneMonitor, PersistResults
 from .utils import make_transformer, root_mean_squared_error, to_pandas
 from .models import LightGBM
@@ -79,7 +80,7 @@ def exp_target(model_output, config, suffix, **kwargs):
 
 def data_cleaning(config, train_mode, suffix, **kwargs):
     drop_constant = Step(name='drop_constant{}'.format(suffix),
-                         transformer=VarianceThreshold(**config.variance_threshold),
+                         transformer=dc.VarianceThreshold(**config.variance_threshold),
                          input_data=['input'],
                          adapter=Adapter({'X': E('input', 'X')
                                           }
@@ -87,17 +88,33 @@ def data_cleaning(config, train_mode, suffix, **kwargs):
                          experiment_directory=config.pipeline.experiment_directory, **kwargs)
 
     drop_duplicate = Step(name='drop_duplicate{}'.format(suffix),
-                          transformer=DropDuplicateColumns(),
+                          transformer=dc.DropDuplicateColumns(),
                           input_steps=[drop_constant],
                           adapter=Adapter({'X': E(drop_constant.name, 'X'),
                                            }
                                           ),
                           experiment_directory=config.pipeline.experiment_directory, **kwargs)
 
+    drop_zero_fraction = Step(name='drop_zero_fraction{}'.format(suffix),
+                              transformer=dc.DropOneValueFrequent(**config.drop_zero_fraction),
+                              input_steps=[drop_duplicate],
+                              adapter=Adapter({'X': E(drop_duplicate.name, 'X'),
+                                               }
+                                              ),
+                              experiment_directory=config.pipeline.experiment_directory, **kwargs)
+
+    impute_missing = Step(name='impute_missing{}'.format(suffix),
+                          transformer=dc.ImputeMissing(**config.impute_missing),
+                          input_steps=[drop_zero_fraction],
+                          adapter=Adapter({'X': E(drop_zero_fraction.name, 'X'),
+                                           }
+                                          ),
+                          experiment_directory=config.pipeline.experiment_directory, **kwargs)
+
     log_num = Step(name='log_num{}'.format(suffix),
                    transformer=make_transformer(lambda x: np.log(x + 1), output_name='numerical_features'),
-                   input_steps=[drop_duplicate],
-                   adapter=Adapter({'x': E(drop_duplicate.name, 'X')}
+                   input_steps=[drop_zero_fraction],
+                   adapter=Adapter({'x': E(drop_zero_fraction.name, 'X')}
                                    ),
                    experiment_directory=config.pipeline.experiment_directory, **kwargs)
 
@@ -118,16 +135,32 @@ def data_cleaning(config, train_mode, suffix, **kwargs):
                                                     ),
                                     experiment_directory=config.pipeline.experiment_directory, **kwargs)
 
+        drop_zero_fraction_valid = Step(name='drop_zero_fraction_valid{}'.format(suffix),
+                                        transformer=drop_zero_fraction,
+                                        input_steps=[drop_duplicate_valid],
+                                        adapter=Adapter({'X': E(drop_duplicate_valid.name, 'X'),
+                                                         }
+                                                        ),
+                                        experiment_directory=config.pipeline.experiment_directory, **kwargs)
+
+        impute_missing_valid = Step(name='impute_missing_valid{}'.format(suffix),
+                                    transformer=impute_missing,
+                                    input_steps=[drop_zero_fraction_valid],
+                                    adapter=Adapter({'X': E(drop_zero_fraction_valid.name, 'X'),
+                                                     }
+                                                    ),
+                                    experiment_directory=config.pipeline.experiment_directory, **kwargs)
+
         log_num_valid = Step(name='log_num_valid{}'.format(suffix),
                              transformer=log_num,
-                             input_steps=[drop_duplicate],
-                             adapter=Adapter({'x': E(drop_duplicate.name, 'X')}
+                             input_steps=[drop_zero_fraction_valid],
+                             adapter=Adapter({'x': E(drop_zero_fraction_valid.name, 'X')}
                                              ),
                              experiment_directory=config.pipeline.experiment_directory, **kwargs)
 
-        return drop_duplicate, drop_duplicate_valid
+        return drop_zero_fraction, drop_zero_fraction_valid
     else:
-        return drop_duplicate
+        return drop_zero_fraction
 
 
 def feature_extraction(data_cleaned, config, train_mode, suffix, **kwargs):
@@ -141,17 +174,34 @@ def feature_extraction(data_cleaned, config, train_mode, suffix, **kwargs):
     ]
 
     if train_mode:
-        decomposed_features, decomposed_features_valid = [], []
-        for decomposer in feature_decomposers:
-            decomposed_feature, decomposed_feature_valid = _decomposition(decomposer, data_cleaned, config, train_mode,
-                                                                          suffix)
-            decomposed_features.append(decomposed_feature)
-            decomposed_features_valid.append(decomposed_feature_valid)
+        # decomposed_features, decomposed_features_valid = [], []
+        # for decomposer in feature_decomposers:
+        #     decomposed_feature, decomposed_feature_valid = _decomposition(decomposer, data_cleaned, config, train_mode,
+        #                                                                   suffix)
+        #     decomposed_features.append(decomposed_feature)
+        #     decomposed_features_valid.append(decomposed_feature_valid)
+        #
+        # numerical_features = decomposed_features
+        # numerical_features_valid = decomposed_features_valid
+        data_cleaned, data_cleaned_valid = data_cleaned
+        simple_features = Step(name='to_numerical{}'.format(suffix),
+                               transformer=dc.ToNumerical(),
+                               input_steps=[data_cleaned],
+                               # adapter=Adapter({'X': E(data_cleaned.name, 'X'),
+                               #                  }
+                               #                 ),
+                               experiment_directory=config.pipeline.experiment_directory, **kwargs)
 
-        numerical_features = decomposed_features
-        numerical_features_valid = decomposed_features_valid
-        feature_combiner, feature_combiner_valid = _join_features(numerical_features=numerical_features,
-                                                                  numerical_features_valid=numerical_features_valid,
+        simple_features_valid = Step(name='to_numerical_valid{}'.format(suffix),
+                                     transformer=simple_features,
+                                     input_steps=[data_cleaned_valid],
+                                     # adapter=Adapter({'X': E(data_cleaned.name, 'X'),
+                                     #                  }
+                                     #                 ),
+                                     experiment_directory=config.pipeline.experiment_directory, **kwargs)
+
+        feature_combiner, feature_combiner_valid = _join_features(numerical_features=[simple_features],
+                                                                  numerical_features_valid=[simple_features_valid],
                                                                   categorical_features=[],
                                                                   categorical_features_valid=[
                                                                   ],
@@ -160,14 +210,22 @@ def feature_extraction(data_cleaned, config, train_mode, suffix, **kwargs):
                                                                   suffix=suffix, **kwargs)
         return feature_combiner, feature_combiner_valid
     else:
-        decomposed_features = []
-        for decomposer in feature_decomposers:
-            decomposed_feature = _decomposition(decomposer, data_cleaned, config, train_mode,
-                                                suffix)
-            decomposed_features.append(decomposed_feature)
-        numerical_features = decomposed_features
+        # decomposed_features = []
+        # for decomposer in feature_decomposers:
+        #     decomposed_feature = _decomposition(decomposer, data_cleaned, config, train_mode,
+        #                                         suffix)
+        #     decomposed_features.append(decomposed_feature)
+        # numerical_features = decomposed_features
 
-        feature_combiner = _join_features(numerical_features=numerical_features,
+        simple_features = Step(name='to_numerical{}'.format(suffix),
+                               transformer=dc.ToNumerical(),
+                               input_steps=[data_cleaned],
+                               # adapter=Adapter({'X': E(data_cleaned.name, 'X'),
+                               #                  }
+                               #                 ),
+                               experiment_directory=config.pipeline.experiment_directory, **kwargs)
+
+        feature_combiner = _join_features(numerical_features=[simple_features],
                                           numerical_features_valid=[],
                                           categorical_features=[],
                                           categorical_features_valid=[],
@@ -188,7 +246,7 @@ def feature_selection(features, config, train_mode, suffix, **kwargs):
 
     if train_mode:
         lasso_selector = Step(name='lasso_selector{}'.format(suffix),
-                              transformer=LassoFeatureSelection(**config.lasso_feature_selector),
+                              transformer=fs.LassoFeatureSelection(**config.lasso_feature_selector),
                               input_data=['input'],
                               input_steps=[features],
                               adapter=Adapter({'target': E('input', 'y'),
@@ -209,7 +267,7 @@ def feature_selection(features, config, train_mode, suffix, **kwargs):
         return features, features_valid
     else:
         lasso_selector = Step(name='lasso_selector{}'.format(suffix),
-                              transformer=LassoFeatureSelection(**config.lasso_feature_selector),
+                              transformer=fs.LassoFeatureSelection(**config.lasso_feature_selector),
                               input_steps=[features],
                               adapter=Adapter({'features': E(features.name, 'features')}
                                               ),

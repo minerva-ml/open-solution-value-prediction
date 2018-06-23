@@ -20,6 +20,10 @@ SOLUTION_CONFIG = AttrDict({
 
     'variance_threshold': {'threshold': params.variance_threshold__threshold
                            },
+    'drop_zero_fraction': {'threshold': params.drop_zero_fraction__threshold
+                           },
+
+    'impute_missing': {},
 
     'truncated_svd': {'n_components': params.truncated_svd__n_components,
                       'n_iter': params.truncated_svd__n_iter,
@@ -29,8 +33,8 @@ SOLUTION_CONFIG = AttrDict({
             'random_state': RANDOM_SEED
             },
     'fast_ica': {'n_components': params.fast_ica__n_components,
-            'random_state': RANDOM_SEED
-            },
+                 'random_state': RANDOM_SEED
+                 },
     'factor_analysis': {'n_components': params.factor_analysis__n_components,
                         'random_state': RANDOM_SEED
                         },
