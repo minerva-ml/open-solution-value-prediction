@@ -20,34 +20,8 @@ SOLUTION_CONFIG = AttrDict({
 
     'variance_threshold': {'threshold': params.variance_threshold__threshold
                            },
-
-    'truncated_svd': {'n_components': params.truncated_svd__n_components,
-                      'n_iter': params.truncated_svd__n_iter,
-                      'random_state': RANDOM_SEED
-                      },
-    'pca': {'n_components': params.pca__n_components,
-            'random_state': RANDOM_SEED
-            },
-    'fast_ica': {'n_components': params.fast_ica__n_components,
-            'random_state': RANDOM_SEED
-            },
-    'factor_analysis': {'n_components': params.factor_analysis__n_components,
-                        'random_state': RANDOM_SEED
-                        },
-    'gaussian_random_projection': {'n_components': params.gaussian_random_projection__n_components,
-                                   'eps': params.gaussian_projection__eps,
-                                   'random_state': RANDOM_SEED
-                                   },
-    'sparse_random_projection': {'n_components': params.sparse_random_projection__n_components,
-                                 'dense_output': True,
-                                 'random_state': RANDOM_SEED
-                                 },
-
-    'lasso_feature_selector': {'n_jobs': params.num_workers,
-                               'threshold': params.lasso_feature_selector__threshold,
-                               'n_alphas': params.lasso_feature_selector__n_alphas,
-                               'random_state': RANDOM_SEED,
-                               },
+    'drop_zero_fraction': {'threshold': params.drop_zero_fraction__threshold
+                           },
 
     'light_gbm': {'device': parameter_eval(params.lgbm__device),
                   'boosting_type': parameter_eval(params.lgbm__boosting_type),

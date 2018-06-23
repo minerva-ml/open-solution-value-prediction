@@ -30,27 +30,19 @@ parameters:
   kaggle_message: 'solution-1'
 
 # Data preparation
-  validation_size: 0.2
+  n_cv_splits: 5
+  validation_size: 0.1
   shuffle: 1
 
 # Execution
   clean_experiment_directory_before_training: 1
-  num_workers: 16
+  num_workers: 4
   verbose: 1
 
-# Feature Extraction
-  truncated_svd__n_components: 100
-  truncated_svd__n_iter: 100
-  pca__n_components: 100
-  fast_ica__n_components: 100
-  factor_analysis__n_components: 100
-  gaussian_random_projection__n_components: 100
-  gaussian_projection__eps: 0.1
-  sparse_random_projection__n_components: 100
+# Data Cleaning
+  drop_zero_fraction__threshold: 0.98
+  variance_threshold__threshold: 0.0
 
-# Feature Selection
-  lasso_feature_selector__threshold: 1e-5
-  lasso_feature_selector__n_alphas: 10
 
 # Light GBM
   lgbm_random_search_runs: 500
