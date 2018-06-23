@@ -92,11 +92,6 @@ class DropDuplicateColumns(BaseTransformer):
         joblib.dump(self.selected_feature_names, filepath)
 
 
-class ImputeMissing(BaseTransformer):
-    def __init__(self, **kwargs):
-        pass
-
-
 class ToNumerical(BaseTransformer):
     def transform(self, X, **kwargs):
         return {'numerical_features': X
