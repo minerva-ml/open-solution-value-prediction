@@ -1,3 +1,4 @@
+import fancyimpute
 import numpy as np
 import pandas as pd
 import sklearn.feature_selection as fs
@@ -81,21 +82,24 @@ class ImputeMissing(BaseTransformer):
     def __init__(self, strategy='mean', missing_value=0):
         self.strategy = strategy
         self.missing_value = missing_value
-        self.imputer = Imputer(missing_values=missing_value, strategy=strategy, axis=0)
-
-    def fit(self, X, **kwargs):
-        self.imputer.fit(X)
-        return self
+        self.imputer_knn = fancyimpute.KNN(3)
+        self.imputer_median = fancyimpute.SimpleFill(fill_method='median')
 
     def transform(self, X, **kwargs):
-        X_missing = (X == self.missing_value).astype(int)
-        X_imputed = self.imputer.transform(X)
-        X_imputed = pd.DataFrame(X_imputed, columns=X.columns)
-        return {'numerical_features': X_imputed,
-                'categorical_features': X_missing}
+        missing_mask = np.where(X.values == self.missing_value, True, False)
+        missing_columns = ['{}_is_missing'.format(col) for col in X.columns]
+        X_is_missing = pd.DataFrame(missing_mask.astype(int), columns=missing_columns)
 
-    def load(self, filepath):
-        self.imputer = joblib.load(filepath)
+        return {                'categorical_features': X_is_missing}
 
-    def persist(self, filepath):
-        joblib.dump(self.imputer, filepath)
+        # X_imputed = X.copy()
+        # X_imputed[missing_mask] = np.nan
+        # X_imputed = self.imputer_knn.complete(X_imputed)
+        #
+        # missing_mask = np.where(X_imputed == 0, True, False)
+        # X_imputed[missing_mask] = np.nan
+        # X_imputed = self.imputer_median.complete(X_imputed)
+        #
+        # X_imputed = pd.DataFrame(X_imputed, columns=X.columns)
+        # return {'numerical_features': X_imputed,
+        #         'categorical_features': X_is_missing}

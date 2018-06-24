@@ -127,8 +127,10 @@ def data_cleaning_v1(config, train_mode, suffix, impute_missing_values=True, **k
 
 
 def data_cleaning_v2(config, train_mode, suffix, **kwargs):
+    cleaned_data = data_cleaning_v1(config, train_mode, suffix, **kwargs)
+
     if train_mode:
-        cleaned_data, cleaned_data_valid = data_cleaning_v1(config, train_mode, suffix, **kwargs)
+        cleaned_data, cleaned_data_valid = cleaned_data
 
     impute_missing = Step(name='impute_missing{}'.format(suffix),
                           transformer=dc.ImputeMissing(**config.impute_missing),
@@ -174,21 +176,37 @@ def feature_extraction_v1(data_cleaned, config, train_mode, suffix, **kwargs):
         return feature_combiner
 
 
-def feature_extraction_v2(data_cleaned, config, train_mode, suffix, **kwargs):
+def feature_extraction_v2(data_cleaned, config, train_mode, suffix, use_imputed, use_is_missing, **kwargs):
     if train_mode:
         data_cleaned_train, data_cleaned_valid = data_cleaned
-        feature_combiner, feature_combiner_valid = _join_features(numerical_features=[data_cleaned_train],
-                                                                  numerical_features_valid=[data_cleaned_valid],
-                                                                  categorical_features=[data_cleaned_train],
-                                                                  categorical_features_valid=[data_cleaned_valid],
+
+        numerical_features, categorical_features = [], []
+        numerical_features_valid, categorical_features_valid = [], []
+        if use_imputed:
+            numerical_features.extend(data_cleaned_train)
+            numerical_features_valid.extend(data_cleaned_valid)
+        elif use_is_missing:
+            categorical_features.extend(data_cleaned_train)
+            categorical_features_valid.extend(data_cleaned_valid)
+
+        feature_combiner, feature_combiner_valid = _join_features(numerical_features=numerical_features,
+                                                                  numerical_features_valid=numerical_features_valid,
+                                                                  categorical_features=categorical_features,
+                                                                  categorical_features_valid=categorical_features_valid,
                                                                   config=config,
                                                                   train_mode=train_mode,
                                                                   suffix=suffix, **kwargs)
         return feature_combiner, feature_combiner_valid
     else:
-        feature_combiner = _join_features(numerical_features=[data_cleaned],
+        numerical_features, categorical_features = [], []
+        if use_imputed:
+            numerical_features.extend(data_cleaned)
+        elif use_is_missing:
+            categorical_features.extend(data_cleaned)
+
+        feature_combiner = _join_features(numerical_features=numerical_features,
                                           numerical_features_valid=[],
-                                          categorical_features=[data_cleaned],
+                                          categorical_features=categorical_features,
                                           categorical_features_valid=[],
                                           config=config,
                                           train_mode=train_mode,

@@ -29,7 +29,7 @@ def lightGBM_v1(config, train_mode, suffix=''):
     return light_gbm
 
 
-def lightGBM_v2(config, train_mode, suffix=''):
+def lightGBM_v2(config, train_mode, suffix='', use_imputed=True, use_is_missing=True):
     if train_mode:
         persist_output = True
         cache_output = True
@@ -45,6 +45,7 @@ def lightGBM_v2(config, train_mode, suffix=''):
                                            load_persisted_output=load_persisted_output)
     features = blocks.feature_extraction_v2(data_cleaned, config,
                                             train_mode, suffix,
+                                            use_imputed=use_imputed, use_is_missing=use_is_missing,
                                             persist_output=persist_output,
                                             cache_output=cache_output,
                                             load_persisted_output=load_persisted_output)
@@ -56,5 +57,7 @@ def lightGBM_v2(config, train_mode, suffix=''):
 
 
 PIPELINES = {'lightGBM': lightGBM_v1,
-             'lightGBM_impute_missing': lightGBM_v2,
+             'lightGBM_is_missing': partial(lightGBM_v2, use_imputed=False, use_is_missing=True),
+             'lightGBM_imputed': partial(lightGBM_v2, use_imputed=True, use_is_missing=False),
+             'lightGBM_imputed_and_is_missing': partial(lightGBM_v2, use_imputed=True, use_is_missing=True),
              }
