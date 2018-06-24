@@ -13,6 +13,7 @@ DEV_SAMPLE_SIZE = 500
 
 ID_COLUMN = ['ID']
 TARGET_COLUMN = ['target']
+MISSING_VALUE = 0
 
 SOLUTION_CONFIG = AttrDict({
     'pipeline': {'experiment_directory': params.experiment_directory
@@ -22,6 +23,9 @@ SOLUTION_CONFIG = AttrDict({
                            },
     'drop_zero_fraction': {'threshold': params.drop_zero_fraction__threshold
                            },
+    'impute_missing': {'strategy': params.impute_missing__method,
+                       'missing_value': MISSING_VALUE,
+                       },
 
     'light_gbm': {'device': parameter_eval(params.lgbm__device),
                   'boosting_type': parameter_eval(params.lgbm__boosting_type),

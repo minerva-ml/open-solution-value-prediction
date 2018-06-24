@@ -1,7 +1,7 @@
 project: ORGANIZATION/Santander-Value-Prediction-Challenge
 
 name: Santander-Value-Prediction-Challenge
-tags: [solution-1]
+tags: [solution-2]
 
 metric:
   channel: 'ROC_AUC'
@@ -42,6 +42,7 @@ parameters:
 # Data Cleaning
   drop_zero_fraction__threshold: 0.98
   variance_threshold__threshold: 0.0
+  impute_missing__method: median
 
 # Light GBM
   lgbm_random_search_runs: 0
