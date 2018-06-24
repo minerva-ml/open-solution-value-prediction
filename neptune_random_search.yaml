@@ -1,7 +1,7 @@
 project: ORGANIZATION/Santander-Value-Prediction-Challenge
 
 name: Santander-Value-Prediction-Challenge
-tags: [solution-1]
+tags: [solution-2]
 
 metric:
   channel: 'RMSLE'
