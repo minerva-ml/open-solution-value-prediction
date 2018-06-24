@@ -77,7 +77,7 @@ def exp_target(model_output, config, suffix, **kwargs):
     return exp_target
 
 
-def data_cleaning_v1(config, train_mode, suffix, impute_missing_values=True, **kwargs):
+def data_cleaning_v1(config, train_mode, suffix, **kwargs):
     drop_constant = Step(name='drop_constant{}'.format(suffix),
                          transformer=dc.VarianceThreshold(**config.variance_threshold),
                          input_data=['input'],
@@ -183,12 +183,13 @@ def feature_extraction_v2(data_cleaned, config, train_mode, suffix, use_imputed,
         numerical_features, categorical_features = [], []
         numerical_features_valid, categorical_features_valid = [], []
         if use_imputed:
-            numerical_features.extend(data_cleaned_train)
-            numerical_features_valid.extend(data_cleaned_valid)
+            numerical_features.append(data_cleaned_train)
+            numerical_features_valid.append(data_cleaned_valid)
         elif use_is_missing:
-            categorical_features.extend(data_cleaned_train)
-            categorical_features_valid.extend(data_cleaned_valid)
+            categorical_features.append(data_cleaned_train)
+            categorical_features_valid.append(data_cleaned_valid)
 
+        print(numerical_features, categorical_features)
         feature_combiner, feature_combiner_valid = _join_features(numerical_features=numerical_features,
                                                                   numerical_features_valid=numerical_features_valid,
                                                                   categorical_features=categorical_features,
@@ -200,9 +201,9 @@ def feature_extraction_v2(data_cleaned, config, train_mode, suffix, use_imputed,
     else:
         numerical_features, categorical_features = [], []
         if use_imputed:
-            numerical_features.extend(data_cleaned)
+            numerical_features.append(data_cleaned)
         elif use_is_missing:
-            categorical_features.extend(data_cleaned)
+            categorical_features.append(data_cleaned)
 
         feature_combiner = _join_features(numerical_features=numerical_features,
                                           numerical_features_valid=[],

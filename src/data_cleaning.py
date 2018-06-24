@@ -90,16 +90,14 @@ class ImputeMissing(BaseTransformer):
         missing_columns = ['{}_is_missing'.format(col) for col in X.columns]
         X_is_missing = pd.DataFrame(missing_mask.astype(int), columns=missing_columns)
 
-        return {                'categorical_features': X_is_missing}
+        X_imputed = X.copy()
+        X_imputed[missing_mask] = np.nan
+        X_imputed = self.imputer_knn.complete(X_imputed)
 
-        # X_imputed = X.copy()
-        # X_imputed[missing_mask] = np.nan
-        # X_imputed = self.imputer_knn.complete(X_imputed)
-        #
-        # missing_mask = np.where(X_imputed == 0, True, False)
-        # X_imputed[missing_mask] = np.nan
-        # X_imputed = self.imputer_median.complete(X_imputed)
-        #
-        # X_imputed = pd.DataFrame(X_imputed, columns=X.columns)
-        # return {'numerical_features': X_imputed,
-        #         'categorical_features': X_is_missing}
+        missing_mask = np.where(X_imputed == 0, True, False)
+        X_imputed[missing_mask] = np.nan
+        X_imputed = self.imputer_median.complete(X_imputed)
+
+        X_imputed = pd.DataFrame(X_imputed, columns=X.columns)
+        return {'numerical_features': X_imputed,
+                'categorical_features': X_is_missing}

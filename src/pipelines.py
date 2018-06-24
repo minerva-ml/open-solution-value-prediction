@@ -31,12 +31,12 @@ def lightGBM_v1(config, train_mode, suffix=''):
 
 def lightGBM_v2(config, train_mode, suffix='', use_imputed=True, use_is_missing=True):
     if train_mode:
-        persist_output = True
         cache_output = True
+        persist_output = True
         load_persisted_output = True
     else:
+        cache_output = True
         persist_output = False
-        cache_output = False
         load_persisted_output = False
 
     data_cleaned = blocks.data_cleaning_v2(config, train_mode, suffix,
