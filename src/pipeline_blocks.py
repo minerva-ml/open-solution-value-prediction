@@ -16,7 +16,7 @@ def classifier_light_gbm(features, config, train_mode, suffix='', **kwargs):
     if train_mode:
         features_train, features_valid = features
         log_target = Step(name='log_target{}'.format(suffix),
-                          transformer=make_transformer(lambda x: np.log(x + 1), output_name='y'),
+                          transformer=make_transformer(lambda x: np.log1p(x), output_name='y'),
                           input_data=['input'],
                           adapter=Adapter({'x': E('input', 'y')}),
                           experiment_directory=config.pipeline.experiment_directory, **kwargs)
@@ -77,30 +77,25 @@ def exp_target(model_output, config, suffix, **kwargs):
     return exp_target
 
 
-def data_cleaning(config, train_mode, suffix, **kwargs):
+def data_cleaning_v1(config, train_mode, suffix, **kwargs):
     drop_constant = Step(name='drop_constant{}'.format(suffix),
                          transformer=dc.VarianceThreshold(**config.variance_threshold),
                          input_data=['input'],
-                         adapter=Adapter({'X': E('input', 'X')
-                                          }
-                                         ),
                          experiment_directory=config.pipeline.experiment_directory, **kwargs)
 
     drop_duplicate = Step(name='drop_duplicate{}'.format(suffix),
                           transformer=dc.DropDuplicateColumns(),
                           input_steps=[drop_constant],
-                          adapter=Adapter({'X': E(drop_constant.name, 'X'),
-                                           }
-                                          ),
                           experiment_directory=config.pipeline.experiment_directory, **kwargs)
 
     drop_zero_fraction = Step(name='drop_zero_fraction{}'.format(suffix),
                               transformer=dc.DropOneValueFrequent(**config.drop_zero_fraction),
                               input_steps=[drop_duplicate],
-                              adapter=Adapter({'X': E(drop_duplicate.name, 'X'),
-                                               }
-                                              ),
                               experiment_directory=config.pipeline.experiment_directory, **kwargs)
+    to_numerical = Step(name='to_numerical{}'.format(suffix),
+                        transformer=make_transformer(lambda X: X, output_name='numerical_features'),
+                        input_steps=[drop_zero_fraction],
+                        experiment_directory=config.pipeline.experiment_directory, **kwargs)
 
     if train_mode:
         drop_constant_valid = Step(name='drop_constant_valid{}'.format(suffix),
@@ -114,56 +109,105 @@ def data_cleaning(config, train_mode, suffix, **kwargs):
         drop_duplicate_valid = Step(name='drop_duplicate_valid{}'.format(suffix),
                                     transformer=drop_duplicate,
                                     input_steps=[drop_constant_valid],
-                                    adapter=Adapter({'X': E(drop_constant_valid.name, 'X'),
-                                                     }
-                                                    ),
                                     experiment_directory=config.pipeline.experiment_directory, **kwargs)
 
         drop_zero_fraction_valid = Step(name='drop_zero_fraction_valid{}'.format(suffix),
                                         transformer=drop_zero_fraction,
                                         input_steps=[drop_duplicate_valid],
-                                        adapter=Adapter({'X': E(drop_duplicate_valid.name, 'X'),
-                                                         }
-                                                        ),
                                         experiment_directory=config.pipeline.experiment_directory, **kwargs)
 
-        return drop_zero_fraction, drop_zero_fraction_valid
+        to_numerical_valid = Step(name='to_numerical_valid{}'.format(suffix),
+                                  transformer=to_numerical,
+                                  input_steps=[drop_zero_fraction_valid],
+                                  experiment_directory=config.pipeline.experiment_directory, **kwargs)
+
+        return to_numerical, to_numerical_valid
     else:
-        return drop_zero_fraction
+        return to_numerical
 
 
-def feature_extraction(data_cleaned, config, train_mode, suffix, **kwargs):
+def data_cleaning_v2(config, train_mode, suffix, **kwargs):
+    cleaned_data = data_cleaning_v1(config, train_mode, suffix, **kwargs)
+
+    if train_mode:
+        cleaned_data, cleaned_data_valid = cleaned_data
+
+    impute_missing = Step(name='impute_missing{}'.format(suffix),
+                          transformer=dc.ImputeMissing(**config.impute_missing),
+                          input_steps=[cleaned_data],
+                          adapter=Adapter({'X': E(cleaned_data.name, 'numerical_features'),
+                                           }
+                                          ),
+                          experiment_directory=config.pipeline.experiment_directory, **kwargs)
+
+    if train_mode:
+        impute_missing_valid = Step(name='impute_missing_valid{}'.format(suffix),
+                                    transformer=impute_missing,
+                                    input_steps=[cleaned_data_valid],
+                                    adapter=Adapter({'X': E(cleaned_data_valid.name, 'numerical_features'),
+                                                     }
+                                                    ),
+                                    experiment_directory=config.pipeline.experiment_directory, **kwargs)
+        return impute_missing, impute_missing_valid
+    else:
+        return impute_missing
+
+
+def feature_extraction_v1(data_cleaned, config, train_mode, suffix, **kwargs):
     if train_mode:
         data_cleaned_train, data_cleaned_valid = data_cleaned
-        simple_features = Step(name='to_numerical{}'.format(suffix),
-                               transformer=make_transformer(lambda X: X, output_name='numerical_features'),
-                               input_steps=[data_cleaned_train],
-                               experiment_directory=config.pipeline.experiment_directory, **kwargs)
-
-        simple_features_valid = Step(name='to_numerical_valid{}'.format(suffix),
-                                     transformer=simple_features,
-                                     input_steps=[data_cleaned_valid],
-                                     experiment_directory=config.pipeline.experiment_directory, **kwargs)
-
-        feature_combiner, feature_combiner_valid = _join_features(numerical_features=[simple_features],
-                                                                  numerical_features_valid=[simple_features_valid],
+        feature_combiner, feature_combiner_valid = _join_features(numerical_features=[data_cleaned_train],
+                                                                  numerical_features_valid=[data_cleaned_valid],
                                                                   categorical_features=[],
-                                                                  categorical_features_valid=[
-                                                                  ],
+                                                                  categorical_features_valid=[],
                                                                   config=config,
                                                                   train_mode=train_mode,
                                                                   suffix=suffix, **kwargs)
         return feature_combiner, feature_combiner_valid
     else:
-
-        simple_features = Step(name='to_numerical{}'.format(suffix),
-                               transformer=make_transformer(lambda X: X, output_name='numerical_features'),
-                               input_steps=[data_cleaned],
-                               experiment_directory=config.pipeline.experiment_directory, **kwargs)
-
-        feature_combiner = _join_features(numerical_features=[simple_features],
+        feature_combiner = _join_features(numerical_features=[data_cleaned],
                                           numerical_features_valid=[],
                                           categorical_features=[],
+                                          categorical_features_valid=[],
+                                          config=config,
+                                          train_mode=train_mode,
+                                          suffix=suffix, **kwargs)
+
+        return feature_combiner
+
+
+def feature_extraction_v2(data_cleaned, config, train_mode, suffix, use_imputed, use_is_missing, **kwargs):
+    if train_mode:
+        data_cleaned_train, data_cleaned_valid = data_cleaned
+
+        numerical_features, categorical_features = [], []
+        numerical_features_valid, categorical_features_valid = [], []
+        if use_imputed:
+            numerical_features.append(data_cleaned_train)
+            numerical_features_valid.append(data_cleaned_valid)
+        elif use_is_missing:
+            categorical_features.append(data_cleaned_train)
+            categorical_features_valid.append(data_cleaned_valid)
+
+        print(numerical_features, categorical_features)
+        feature_combiner, feature_combiner_valid = _join_features(numerical_features=numerical_features,
+                                                                  numerical_features_valid=numerical_features_valid,
+                                                                  categorical_features=categorical_features,
+                                                                  categorical_features_valid=categorical_features_valid,
+                                                                  config=config,
+                                                                  train_mode=train_mode,
+                                                                  suffix=suffix, **kwargs)
+        return feature_combiner, feature_combiner_valid
+    else:
+        numerical_features, categorical_features = [], []
+        if use_imputed:
+            numerical_features.append(data_cleaned)
+        elif use_is_missing:
+            categorical_features.append(data_cleaned)
+
+        feature_combiner = _join_features(numerical_features=numerical_features,
+                                          numerical_features_valid=[],
+                                          categorical_features=categorical_features,
                                           categorical_features_valid=[],
                                           config=config,
                                           train_mode=train_mode,

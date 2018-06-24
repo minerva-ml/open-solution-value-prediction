@@ -1,7 +1,9 @@
+import fancyimpute
 import numpy as np
 import pandas as pd
 import sklearn.feature_selection as fs
 from sklearn.externals import joblib
+from sklearn.preprocessing import Imputer
 from steppy.base import BaseTransformer
 from steppy.utils import get_logger
 
@@ -76,23 +78,26 @@ class DropDuplicateColumns(BaseTransformer):
         joblib.dump(self.selected_feature_names, filepath)
 
 
-class DropDuplicateColumns(BaseTransformer):
-    def fit(self, X, **kwargs):
-        _, index = np.unique(X.values, return_index=True, axis=1)
-        self.selected_feature_names = [feature for idx, feature, in enumerate(X.columns) if idx in index]
-        return self
+class ImputeMissing(BaseTransformer):
+    def __init__(self, strategy='mean', missing_value=0):
+        self.strategy = strategy
+        self.missing_value = missing_value
+        self.imputer_knn = fancyimpute.KNN(3)
+        self.imputer_median = fancyimpute.SimpleFill(fill_method='median')
 
     def transform(self, X, **kwargs):
-        return {'X': X[self.selected_feature_names]}
+        missing_mask = np.where(X.values == self.missing_value, True, False)
+        missing_columns = ['{}_is_missing'.format(col) for col in X.columns]
+        X_is_missing = pd.DataFrame(missing_mask.astype(int), columns=missing_columns)
 
-    def load(self, filepath):
-        self.selected_feature_names = joblib.load(filepath)
+        X_imputed = X.copy()
+        X_imputed[missing_mask] = np.nan
+        X_imputed = self.imputer_knn.complete(X_imputed)
 
-    def persist(self, filepath):
-        joblib.dump(self.selected_feature_names, filepath)
+        missing_mask = np.where(X_imputed == 0, True, False)
+        X_imputed[missing_mask] = np.nan
+        X_imputed = self.imputer_median.complete(X_imputed)
 
-
-class ToNumerical(BaseTransformer):
-    def transform(self, X, **kwargs):
-        return {'numerical_features': X
-                }
+        X_imputed = pd.DataFrame(X_imputed, columns=X.columns)
+        return {'numerical_features': X_imputed,
+                'categorical_features': X_is_missing}
