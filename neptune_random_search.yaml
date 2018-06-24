@@ -42,7 +42,7 @@ parameters:
 # Data Cleaning
   drop_zero_fraction__threshold: 0.98
   variance_threshold__threshold: 0.0
-
+  impute_missing__method: median
 
 # Light GBM
   lgbm_random_search_runs: 500

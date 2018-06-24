@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import sklearn.feature_selection as fs
 from sklearn.externals import joblib
+from sklearn.preprocessing import Imputer
 from steppy.base import BaseTransformer
 from steppy.utils import get_logger
 
@@ -76,23 +77,25 @@ class DropDuplicateColumns(BaseTransformer):
         joblib.dump(self.selected_feature_names, filepath)
 
 
-class DropDuplicateColumns(BaseTransformer):
+class ImputeMissing(BaseTransformer):
+    def __init__(self, strategy='mean', missing_value=0):
+        self.strategy = strategy
+        self.missing_value = missing_value
+        self.imputer = Imputer(missing_values=missing_value, strategy=strategy, axis=0)
+
     def fit(self, X, **kwargs):
-        _, index = np.unique(X.values, return_index=True, axis=1)
-        self.selected_feature_names = [feature for idx, feature, in enumerate(X.columns) if idx in index]
+        self.imputer.fit(X)
         return self
 
     def transform(self, X, **kwargs):
-        return {'X': X[self.selected_feature_names]}
+        X_missing = (X == self.missing_value).astype(int)
+        X_imputed = self.imputer.transform(X)
+        X_imputed = pd.DataFrame(X_imputed, columns=X.columns)
+        return {'numerical_features': X_imputed,
+                'categorical_features': X_missing}
 
     def load(self, filepath):
-        self.selected_feature_names = joblib.load(filepath)
+        self.imputer = joblib.load(filepath)
 
     def persist(self, filepath):
-        joblib.dump(self.selected_feature_names, filepath)
-
-
-class ToNumerical(BaseTransformer):
-    def transform(self, X, **kwargs):
-        return {'numerical_features': X
-                }
+        joblib.dump(self.imputer, filepath)
