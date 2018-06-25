@@ -16,7 +16,7 @@ def lightGBM_v1(config, train_mode, suffix=''):
     Model:
         - lighbgbm
         - all params in neptune.yaml
-        - 0s treated as missing value
+        - 0s treated as missing value 1.39 CV 1.43 LB
     """
     if train_mode:
         persist_output = True
@@ -74,7 +74,6 @@ def lightGBM_v2(config, train_mode, suffix=''):
                                            load_persisted_output=load_persisted_output)
     features = blocks.feature_extraction_v2(data_cleaned, config,
                                             train_mode, suffix,
-                                            use_imputed=use_imputed, use_is_missing=use_is_missing,
                                             persist_output=persist_output,
                                             cache_output=cache_output,
                                             load_persisted_output=load_persisted_output)
@@ -104,8 +103,13 @@ def lightGBM_v3(config, train_mode, suffix=''):
     Model:
         - lighbgbm
         - all params in neptune.yaml
-        - lightgbm trained on just dummy is_missing table gets 1.51 CV 1.77 LB, interesting
-    """
+        - Truncated svd: alone gives 1.56 CV
+        - PCA: alone gives 1.55 CV
+        - Fast ICA: alone gives XXX CV
+        - Factor Analysis: alone gives XXX CV
+        - Gaussian random projections: alone gives XXX CV
+        - Sparse random projection: alone gives XXX CV
+        """
     if train_mode:
         cache_output = True
         persist_output = True

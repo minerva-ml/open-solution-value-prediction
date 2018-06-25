@@ -204,11 +204,11 @@ def feature_extraction_v2(data_cleaned, config, train_mode, suffix, **kwargs):
 def feature_extraction_v3(data_cleaned, config, train_mode, suffix, **kwargs):
     feature_decomposers = [
         (TruncatedSVD, config.truncated_svd, 'trunc_svd'),
-        (fe.PCA, config.pca, 'pca'),
-        (fe.FastICA, config.fast_ica, 'fast_ica'),
-        (fe.FactorAnalysis, config.factor_analysis, 'factor_analysis'),
-        (fe.GaussianRandomProjection, config.gaussian_random_projection, 'grp'),
-        (fe.SparseRandomProjection, config.sparse_random_projection, 'srp'),
+        # (fe.PCA, config.pca, 'pca'),
+        # (fe.FastICA, config.fast_ica, 'fast_ica'),
+        # (fe.FactorAnalysis, config.factor_analysis, 'factor_analysis'),
+        # (fe.GaussianRandomProjection, config.gaussian_random_projection, 'grp'),
+        # (fe.SparseRandomProjection, config.sparse_random_projection, 'srp'),
     ]
 
     if train_mode:
