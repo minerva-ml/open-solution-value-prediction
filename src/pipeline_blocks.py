@@ -153,127 +153,81 @@ def data_cleaning_v2(config, train_mode, suffix, **kwargs):
         return impute_missing
 
 
-def feature_extraction_v1(data_cleaned, config, train_mode, suffix, **kwargs):
+def feature_extraction(data_cleaned, config, train_mode, suffix,
+                       use_raw, use_is_missing, use_projections, use_aggregations, **kwargs):
     if train_mode:
         data_cleaned_train, data_cleaned_valid = data_cleaned
-        feature_combiner, feature_combiner_valid = _join_features(numerical_features=[data_cleaned_train],
-                                                                  numerical_features_valid=[data_cleaned_valid],
-                                                                  categorical_features=[],
-                                                                  categorical_features_valid=[],
-                                                                  config=config,
-                                                                  train_mode=train_mode,
-                                                                  suffix=suffix, **kwargs)
-        return feature_combiner, feature_combiner_valid
-    else:
-        feature_combiner = _join_features(numerical_features=[data_cleaned],
-                                          numerical_features_valid=[],
-                                          categorical_features=[],
-                                          categorical_features_valid=[],
-                                          config=config,
-                                          train_mode=train_mode,
-                                          suffix=suffix, **kwargs)
+        numerical_features, numerical_features_valid = [], []
+        categorical_features, categorical_features_valid = [], []
+        if use_raw:
+            numerical_features.append(data_cleaned_train)
+            numerical_features_valid.append(data_cleaned_valid)
 
-        return feature_combiner
+        elif use_is_missing:
+            categorical_features.append(data_cleaned_train)
+            categorical_features_valid.append(data_cleaned_valid)
 
+        elif use_projections:
+            feature_projectors = [
+                (TruncatedSVD, config.truncated_svd, 'trunc_svd'),
+                (fe.PCA, config.pca, 'pca'),
+                (fe.FastICA, config.fast_ica, 'fast_ica'),
+                (fe.FactorAnalysis, config.factor_analysis, 'factor_analysis'),
+                (fe.GaussianRandomProjection, config.gaussian_random_projection, 'grp'),
+                (fe.SparseRandomProjection, config.sparse_random_projection, 'srp'),
+            ]
 
-def feature_extraction_v2(data_cleaned, config, train_mode, suffix, **kwargs):
-    if train_mode:
-        data_cleaned_train, data_cleaned_valid = data_cleaned
+            projection_features, projection_features_valid = [], []
+            for projector in feature_projectors:
+                projected_feature, projected_feature_valid = _projection(projector, data_cleaned, config,
+                                                                         train_mode, suffix)
+                projection_features.append(projected_feature)
+                projection_features_valid.append(projected_feature_valid)
+            numerical_features.extend(projection_features)
+            numerical_features_valid.extend(projection_features_valid)
 
-        feature_combiner, feature_combiner_valid = _join_features(numerical_features=[],
-                                                                  numerical_features_valid=[],
-                                                                  categorical_features=[data_cleaned_train],
-                                                                  categorical_features_valid=[data_cleaned_valid],
-                                                                  config=config,
-                                                                  train_mode=train_mode,
-                                                                  suffix=suffix, **kwargs)
-        return feature_combiner, feature_combiner_valid
-    else:
+        elif use_aggregations:
+            agg_features_train, agg_features_valid = _aggregations_features(data_cleaned, config, train_mode, suffix)
+            numerical_features.append(agg_features_train)
+            numerical_features_valid.append(agg_features_valid)
 
-        feature_combiner = _join_features(numerical_features=[],
-                                          numerical_features_valid=[],
-                                          categorical_features=[data_cleaned],
-                                          categorical_features_valid=[],
-                                          config=config,
-                                          train_mode=train_mode,
-                                          suffix=suffix, **kwargs)
-
-        return feature_combiner
-
-
-def feature_extraction_v3(data_cleaned, config, train_mode, suffix, **kwargs):
-    feature_decomposers = [
-        (TruncatedSVD, config.truncated_svd, 'trunc_svd'),
-        (fe.PCA, config.pca, 'pca'),
-        (fe.FastICA, config.fast_ica, 'fast_ica'),
-        (fe.FactorAnalysis, config.factor_analysis, 'factor_analysis'),
-        (fe.GaussianRandomProjection, config.gaussian_random_projection, 'grp'),
-        (fe.SparseRandomProjection, config.sparse_random_projection, 'srp'),
-    ]
-
-    if train_mode:
-        decomposed_features, decomposed_features_valid = [], []
-        for decomposer in feature_decomposers:
-            decomposed_feature, decomposed_feature_valid = _decomposition(decomposer, data_cleaned, config, train_mode,
-                                                                          suffix)
-            decomposed_features.append(decomposed_feature)
-            decomposed_features_valid.append(decomposed_feature_valid)
-
-        numerical_features = decomposed_features
-        numerical_features_valid = decomposed_features_valid
         feature_combiner, feature_combiner_valid = _join_features(numerical_features=numerical_features,
                                                                   numerical_features_valid=numerical_features_valid,
-                                                                  categorical_features=[],
-                                                                  categorical_features_valid=[],
+                                                                  categorical_features=categorical_features,
+                                                                  categorical_features_valid=categorical_features_valid,
                                                                   config=config,
                                                                   train_mode=train_mode,
                                                                   suffix=suffix, **kwargs)
         return feature_combiner, feature_combiner_valid
     else:
-        decomposed_features = []
-        for decomposer in feature_decomposers:
-            decomposed_feature = _decomposition(decomposer, data_cleaned, config, train_mode,
-                                                suffix)
-            decomposed_features.append(decomposed_feature)
-        numerical_features = decomposed_features
+        numerical_features, categorical_features = [], []
+        if use_raw:
+            numerical_features.append(data_cleaned)
+        elif use_is_missing:
+            categorical_features.append(data_cleaned)
+        elif use_projections:
+            feature_projectors = [
+                (TruncatedSVD, config.truncated_svd, 'trunc_svd'),
+                (fe.PCA, config.pca, 'pca'),
+                (fe.FastICA, config.fast_ica, 'fast_ica'),
+                (fe.FactorAnalysis, config.factor_analysis, 'factor_analysis'),
+                (fe.GaussianRandomProjection, config.gaussian_random_projection, 'grp'),
+                (fe.SparseRandomProjection, config.sparse_random_projection, 'srp'),
+            ]
+
+            projection_features, projection_features_valid = [], []
+            for projector in feature_projectors:
+                projected_feature = _projection(projector, data_cleaned, config, train_mode, suffix)
+                projection_features.append(projected_feature)
+            numerical_features.extend(projection_features)
+
+        elif use_aggregations:
+            agg_features_train = _aggregations_features(data_cleaned, config, train_mode, suffix)
+            numerical_features.append(agg_features_train)
 
         feature_combiner = _join_features(numerical_features=numerical_features,
                                           numerical_features_valid=[],
-                                          categorical_features=[],
-                                          categorical_features_valid=[],
-                                          config=config,
-                                          train_mode=train_mode,
-                                          suffix=suffix, **kwargs)
-
-        return feature_combiner
-
-
-def feature_extraction_v4(data_cleaned, config, train_mode, suffix, **kwargs):
-    feature_decomposers = [
-        (TruncatedSVD, config.truncated_svd, 'trunc_svd'),
-        (fe.PCA, config.pca, 'pca'),
-        (fe.FastICA, config.fast_ica, 'fast_ica'),
-        (fe.FactorAnalysis, config.factor_analysis, 'factor_analysis'),
-        (fe.GaussianRandomProjection, config.gaussian_random_projection, 'grp'),
-        (fe.SparseRandomProjection, config.sparse_random_projection, 'srp'),
-    ]
-
-    if train_mode:
-        agg_features_train, agg_features_valid = _aggregations_features(data_cleaned, config, train_mode, suffix)
-        feature_combiner, feature_combiner_valid = _join_features(numerical_features=[agg_features_train],
-                                                                  numerical_features_valid=[agg_features_valid],
-                                                                  categorical_features=[],
-                                                                  categorical_features_valid=[],
-                                                                  config=config,
-                                                                  train_mode=train_mode,
-                                                                  suffix=suffix, **kwargs)
-        return feature_combiner, feature_combiner_valid
-    else:
-        agg_features = _aggregations_features(data_cleaned, config, train_mode, suffix)
-
-        feature_combiner = _join_features(numerical_features=[agg_features],
-                                          numerical_features_valid=[],
-                                          categorical_features=[],
+                                          categorical_features=categorical_features,
                                           categorical_features_valid=[],
                                           config=config,
                                           train_mode=train_mode,
@@ -320,40 +274,40 @@ def _join_features(numerical_features,
         return feature_joiner
 
 
-def _decomposition(decomposer_config, data_cleaned, config, train_mode, suffix, **kwargs):
-    (DecompositionTransformer, transformer_config, transformer_name) = decomposer_config
+def _projection(projection_config, data_cleaned, config, train_mode, suffix, **kwargs):
+    (DecompositionTransformer, transformer_config, transformer_name) = projection_config
 
     if train_mode:
         data_cleaned, data_cleaned_valid = data_cleaned
 
-    decomposer = Step(name='{}{}'.format(transformer_name, suffix),
-                      transformer=DecompositionTransformer(**transformer_config),
-                      input_steps=[data_cleaned],
-                      adapter=Adapter({'features': E(data_cleaned.name, 'numerical_features')}),
-                      experiment_directory=config.pipeline.experiment_directory, **kwargs)
+    projector = Step(name='{}{}'.format(transformer_name, suffix),
+                     transformer=DecompositionTransformer(**transformer_config),
+                     input_steps=[data_cleaned],
+                     adapter=Adapter({'features': E(data_cleaned.name, 'numerical_features')}),
+                     experiment_directory=config.pipeline.experiment_directory, **kwargs)
 
-    decomposer_pandas = Step(name='{}_pandas{}'.format(transformer_name, suffix),
-                             transformer=make_transformer(partial(to_pandas, column_prefix=transformer_name)
-                                                          , output_name='numerical_features'),
-                             input_steps=[decomposer],
-                             adapter=Adapter({'x': E(decomposer.name, 'features')}),
-                             experiment_directory=config.pipeline.experiment_directory, **kwargs)
+    projector_pandas = Step(name='{}_pandas{}'.format(transformer_name, suffix),
+                            transformer=make_transformer(partial(to_pandas, column_prefix=transformer_name)
+                                                         , output_name='numerical_features'),
+                            input_steps=[projector],
+                            adapter=Adapter({'x': E(projector.name, 'features')}),
+                            experiment_directory=config.pipeline.experiment_directory, **kwargs)
 
     if train_mode:
-        decomposer_valid = Step(name='{}_valid{}'.format(transformer_name, suffix),
-                                transformer=decomposer,
-                                input_steps=[data_cleaned_valid],
-                                adapter=Adapter({'features': E(data_cleaned_valid.name, 'numerical_features')}
-                                                ),
-                                experiment_directory=config.pipeline.experiment_directory, **kwargs)
-        decomposer_pandas_valid = Step(name='{}_pandas_valid{}'.format(transformer_name, suffix),
-                                       transformer=decomposer_pandas,
-                                       input_steps=[decomposer_valid],
-                                       adapter=Adapter({'x': E(decomposer_valid.name, 'features')}),
-                                       experiment_directory=config.pipeline.experiment_directory, **kwargs)
-        return decomposer_pandas, decomposer_pandas_valid
+        projector_valid = Step(name='{}_valid{}'.format(transformer_name, suffix),
+                               transformer=projector,
+                               input_steps=[data_cleaned_valid],
+                               adapter=Adapter({'features': E(data_cleaned_valid.name, 'numerical_features')}
+                                               ),
+                               experiment_directory=config.pipeline.experiment_directory, **kwargs)
+        projector_pandas_valid = Step(name='{}_pandas_valid{}'.format(transformer_name, suffix),
+                                      transformer=projector_pandas,
+                                      input_steps=[projector_valid],
+                                      adapter=Adapter({'x': E(projector_valid.name, 'features')}),
+                                      experiment_directory=config.pipeline.experiment_directory, **kwargs)
+        return projector_pandas, projector_pandas_valid
     else:
-        return decomposer_pandas
+        return projector_pandas
 
 
 def _aggregations_features(data_cleaned, config, train_mode, suffix, **kwargs):
@@ -361,17 +315,17 @@ def _aggregations_features(data_cleaned, config, train_mode, suffix, **kwargs):
         data_cleaned, data_cleaned_valid = data_cleaned
 
     row_agg_feature = Step(name='row_agg_feature{}'.format(suffix),
-                       transformer=fe.RowAggregationFeatures(),
-                       input_steps=[data_cleaned],
-                       adapter=Adapter({'X': E(data_cleaned.name, 'numerical_features')}),
-                       experiment_directory=config.pipeline.experiment_directory, **kwargs)
+                           transformer=fe.RowAggregationFeatures(),
+                           input_steps=[data_cleaned],
+                           adapter=Adapter({'X': E(data_cleaned.name, 'numerical_features')}),
+                           experiment_directory=config.pipeline.experiment_directory, **kwargs)
 
     if train_mode:
         row_agg_feature_valid = Step(name='row_agg_feature_valid{}'.format(suffix),
-                                 transformer=row_agg_feature,
-                                 input_steps=[data_cleaned_valid],
-                                 adapter=Adapter({'X': E(data_cleaned_valid.name, 'numerical_features')}),
-                                 experiment_directory=config.pipeline.experiment_directory, **kwargs)
+                                     transformer=row_agg_feature,
+                                     input_steps=[data_cleaned_valid],
+                                     adapter=Adapter({'X': E(data_cleaned_valid.name, 'numerical_features')}),
+                                     experiment_directory=config.pipeline.experiment_directory, **kwargs)
 
         return row_agg_feature, row_agg_feature_valid
     else:
