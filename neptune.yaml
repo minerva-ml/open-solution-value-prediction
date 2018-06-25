@@ -39,6 +39,16 @@ parameters:
   num_workers: 4
   verbose: 1
 
+# Feature Extraction
+  truncated_svd__n_components: 100
+  truncated_svd__n_iter: 10
+  pca__n_components: 100
+  fast_ica__n_components: 100
+  factor_analysis__n_components: 100
+  gaussian_random_projection__n_components: 100
+  gaussian_projection__eps: 0.1
+  sparse_random_projection__n_components: 100
+
 # Data Cleaning
   drop_zero_fraction__threshold: 0.98
   variance_threshold__threshold: 0.0
