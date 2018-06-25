@@ -1,7 +1,7 @@
 project: ORGANIZATION/Santander-Value-Prediction-Challenge
 
 name: Santander-Value-Prediction-Challenge
-tags: [solution-1]
+tags: [solution-2]
 
 metric:
   channel: 'ROC_AUC'
@@ -26,21 +26,33 @@ parameters:
   experiment_directory:           YOUR/PATH/WORKDIR
 
 # Kaggle
-  kaggle_api: 1
+  kaggle_api: 0
   kaggle_message: 'solution-1'
 
 # Data preparation
-  n_cv_splits: 10
+  n_cv_splits: 5
   validation_size: 0.1
   shuffle: 1
 
 # Execution
   clean_experiment_directory_before_training: 1
-  num_workers: 16
+  num_workers: 4
   verbose: 1
 
-# Preprocessing
-  fillna_value: -1
+# Feature Extraction
+  truncated_svd__n_components: 100
+  truncated_svd__n_iter: 10
+  pca__n_components: 100
+  fast_ica__n_components: 100
+  factor_analysis__n_components: 100
+  gaussian_random_projection__n_components: 100
+  gaussian_projection__eps: 0.1
+  sparse_random_projection__n_components: 100
+
+# Data Cleaning
+  drop_zero_fraction__threshold: 0.98
+  variance_threshold__threshold: 0.0
+  impute_missing__method: median
 
 # Light GBM
   lgbm_random_search_runs: 0
@@ -51,17 +63,18 @@ parameters:
   lgbm__number_boosting_rounds: 10000
   lgbm__early_stopping_rounds: 100
   lgbm__learning_rate: 0.01
-  lgbm__num_leaves: 32
-  lgbm__max_depth: 10
+  lgbm__num_leaves: 180
+  lgbm__max_depth: -1
   lgbm__min_child_samples: 1
-  lgbm__max_bin: 300  # at most 255 for device=gpu
-  lgbm__subsample: 0.8
-  lgbm__subsample_freq: 1
-  lgbm__colsample_bytree: 0.8
-  lgbm__min_child_weight: 1
-  lgbm__reg_lambda: 0
-  lgbm__reg_alpha: 0
+  lgbm__max_bin: 255  # at most 255 for device=gpu
+  lgbm__subsample: 0.5
+  lgbm__subsample_freq: 4
+  lgbm__colsample_bytree: 0.5
+  lgbm__min_child_weight: 10
+  lgbm__reg_lambda: 0.1
+  lgbm__reg_alpha: 0.0
   lgbm__scale_pos_weight: 1
+  lgbm__zero_as_missing: True
 
 # Postprocessing
   aggregation_method: mean
