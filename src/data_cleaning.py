@@ -78,6 +78,18 @@ class DropDuplicateColumns(BaseTransformer):
         joblib.dump(self.selected_feature_names, filepath)
 
 
+class DummiesMissing(BaseTransformer):
+    def __init__(self, missing_value=0):
+        self.missing_value = missing_value
+
+    def transform(self, X, **kwargs):
+        missing_mask = np.where(X.values == self.missing_value, True, False)
+        missing_columns = ['{}_is_missing'.format(col) for col in X.columns]
+        X_is_missing = pd.DataFrame(missing_mask.astype(int), columns=missing_columns)
+
+        return {'categorical_features': X_is_missing}
+
+
 class ImputeMissing(BaseTransformer):
     def __init__(self, strategy='mean', missing_value=0):
         self.strategy = strategy

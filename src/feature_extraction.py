@@ -30,3 +30,53 @@ class FeatureJoiner(BaseTransformer):
                 feature_names.append(dataframe.name)
 
         return feature_names
+
+
+class BaseDecomposition(BaseTransformer):
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.estimator = None
+
+    def fit(self, features):
+        self.estimator.fit(features)
+        return self
+
+    def transform(self, features):
+        return {'features': self.estimator.transform(features)}
+
+    def load(self, filepath):
+        self.estimator = joblib.load(filepath)
+        return self
+
+    def persist(self, filepath):
+        joblib.dump(self.estimator, filepath)
+
+
+class PCA(BaseDecomposition):
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.estimator = sk_d.PCA(**kwargs)
+
+
+class FastICA(BaseDecomposition):
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.estimator = sk_d.FastICA(**kwargs)
+
+
+class FactorAnalysis(BaseDecomposition):
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.estimator = sk_d.FactorAnalysis(**kwargs)
+
+
+class GaussianRandomProjection(BaseDecomposition):
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.estimator = sk_rp.GaussianRandomProjection(**kwargs)
+
+
+class SparseRandomProjection(BaseDecomposition):
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.estimator = sk_rp.SparseRandomProjection(**kwargs)

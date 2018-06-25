@@ -132,8 +132,8 @@ def data_cleaning_v2(config, train_mode, suffix, **kwargs):
     if train_mode:
         cleaned_data, cleaned_data_valid = cleaned_data
 
-    impute_missing = Step(name='impute_missing{}'.format(suffix),
-                          transformer=dc.ImputeMissing(**config.impute_missing),
+    impute_missing = Step(name='dummies_missing{}'.format(suffix),
+                          transformer=dc.DummiesMissing(**config.dummies_missing),
                           input_steps=[cleaned_data],
                           adapter=Adapter({'X': E(cleaned_data.name, 'numerical_features'),
                                            }
@@ -141,7 +141,7 @@ def data_cleaning_v2(config, train_mode, suffix, **kwargs):
                           experiment_directory=config.pipeline.experiment_directory, **kwargs)
 
     if train_mode:
-        impute_missing_valid = Step(name='impute_missing_valid{}'.format(suffix),
+        impute_missing_valid = Step(name='dummies_missing_valid{}'.format(suffix),
                                     transformer=impute_missing,
                                     input_steps=[cleaned_data_valid],
                                     adapter=Adapter({'X': E(cleaned_data_valid.name, 'numerical_features'),
@@ -176,38 +176,70 @@ def feature_extraction_v1(data_cleaned, config, train_mode, suffix, **kwargs):
         return feature_combiner
 
 
-def feature_extraction_v2(data_cleaned, config, train_mode, suffix, use_imputed, use_is_missing, **kwargs):
+def feature_extraction_v2(data_cleaned, config, train_mode, suffix, **kwargs):
     if train_mode:
         data_cleaned_train, data_cleaned_valid = data_cleaned
 
-        numerical_features, categorical_features = [], []
-        numerical_features_valid, categorical_features_valid = [], []
-        if use_imputed:
-            numerical_features.append(data_cleaned_train)
-            numerical_features_valid.append(data_cleaned_valid)
-        elif use_is_missing:
-            categorical_features.append(data_cleaned_train)
-            categorical_features_valid.append(data_cleaned_valid)
-
-        print(numerical_features, categorical_features)
-        feature_combiner, feature_combiner_valid = _join_features(numerical_features=numerical_features,
-                                                                  numerical_features_valid=numerical_features_valid,
-                                                                  categorical_features=categorical_features,
-                                                                  categorical_features_valid=categorical_features_valid,
+        feature_combiner, feature_combiner_valid = _join_features(numerical_features=[],
+                                                                  numerical_features_valid=[],
+                                                                  categorical_features=[data_cleaned_train],
+                                                                  categorical_features_valid=[data_cleaned_valid],
                                                                   config=config,
                                                                   train_mode=train_mode,
                                                                   suffix=suffix, **kwargs)
         return feature_combiner, feature_combiner_valid
     else:
-        numerical_features, categorical_features = [], []
-        if use_imputed:
-            numerical_features.append(data_cleaned)
-        elif use_is_missing:
-            categorical_features.append(data_cleaned)
+
+        feature_combiner = _join_features(numerical_features=[],
+                                          numerical_features_valid=[],
+                                          categorical_features=[data_cleaned],
+                                          categorical_features_valid=[],
+                                          config=config,
+                                          train_mode=train_mode,
+                                          suffix=suffix, **kwargs)
+
+        return feature_combiner
+
+
+def feature_extraction_v3(data_cleaned, config, train_mode, suffix, **kwargs):
+    feature_decomposers = [
+        (TruncatedSVD, config.truncated_svd, 'trunc_svd'),
+        (fe.PCA, config.pca, 'pca'),
+        (fe.FastICA, config.fast_ica, 'fast_ica'),
+        (fe.FactorAnalysis, config.factor_analysis, 'factor_analysis'),
+        (fe.GaussianRandomProjection, config.gaussian_random_projection, 'grp'),
+        (fe.SparseRandomProjection, config.sparse_random_projection, 'srp'),
+    ]
+
+    if train_mode:
+        decomposed_features, decomposed_features_valid = [], []
+        for decomposer in feature_decomposers:
+            decomposed_feature, decomposed_feature_valid = _decomposition(decomposer, data_cleaned, config, train_mode,
+                                                                          suffix)
+            decomposed_features.append(decomposed_feature)
+            decomposed_features_valid.append(decomposed_feature_valid)
+
+        numerical_features = decomposed_features
+        numerical_features_valid = decomposed_features_valid
+        feature_combiner, feature_combiner_valid = _join_features(numerical_features=numerical_features,
+                                                                  numerical_features_valid=numerical_features_valid,
+                                                                  categorical_features=[],
+                                                                  categorical_features_valid=[],
+                                                                  config=config,
+                                                                  train_mode=train_mode,
+                                                                  suffix=suffix, **kwargs)
+        return feature_combiner, feature_combiner_valid
+    else:
+        decomposed_features = []
+        for decomposer in feature_decomposers:
+            decomposed_feature = _decomposition(decomposer, data_cleaned, config, train_mode,
+                                                suffix)
+            decomposed_features.append(decomposed_feature)
+        numerical_features = decomposed_features
 
         feature_combiner = _join_features(numerical_features=numerical_features,
                                           numerical_features_valid=[],
-                                          categorical_features=categorical_features,
+                                          categorical_features=[],
                                           categorical_features_valid=[],
                                           config=config,
                                           train_mode=train_mode,
@@ -252,3 +284,39 @@ def _join_features(numerical_features,
 
     else:
         return feature_joiner
+
+
+def _decomposition(decomposer_config, data_cleaned, config, train_mode, suffix, **kwargs):
+    (DecompositionTransformer, transformer_config, transformer_name) = decomposer_config
+
+    if train_mode:
+        data_cleaned, data_cleaned_valid = data_cleaned
+
+    decomposer = Step(name='{}{}'.format(transformer_name, suffix),
+                      transformer=DecompositionTransformer(**transformer_config),
+                      input_steps=[data_cleaned],
+                      adapter=Adapter({'features': E(data_cleaned.name, 'numerical_features')}),
+                      experiment_directory=config.pipeline.experiment_directory, **kwargs)
+
+    decomposer_pandas = Step(name='{}_pandas{}'.format(transformer_name, suffix),
+                             transformer=make_transformer(partial(to_pandas, column_prefix=transformer_name)
+                                                          , output_name='numerical_features'),
+                             input_steps=[decomposer],
+                             adapter=Adapter({'x': E(decomposer.name, 'features')}),
+                             experiment_directory=config.pipeline.experiment_directory, **kwargs)
+
+    if train_mode:
+        decomposer_valid = Step(name='{}_valid{}'.format(transformer_name, suffix),
+                                transformer=decomposer,
+                                input_steps=[data_cleaned_valid],
+                                adapter=Adapter({'features': E(data_cleaned_valid.name, 'numerical_features')}
+                                                ),
+                                experiment_directory=config.pipeline.experiment_directory, **kwargs)
+        decomposer_pandas_valid = Step(name='{}_pandas_valid{}'.format(transformer_name, suffix),
+                                       transformer=decomposer_pandas,
+                                       input_steps=[decomposer_valid],
+                                       adapter=Adapter({'x': E(decomposer_valid.name, 'features')}),
+                                       experiment_directory=config.pipeline.experiment_directory, **kwargs)
+        return decomposer_pandas, decomposer_pandas_valid
+    else:
+        return decomposer_pandas
