@@ -163,11 +163,11 @@ def feature_extraction(data_cleaned, config, train_mode, suffix,
             numerical_features.append(data_cleaned_train)
             numerical_features_valid.append(data_cleaned_valid)
 
-        elif use_is_missing:
+        if use_is_missing:
             categorical_features.append(data_cleaned_train)
             categorical_features_valid.append(data_cleaned_valid)
 
-        elif use_projections:
+        if use_projections:
             feature_projectors = _get_feature_projectors(config)
             projection_features, projection_features_valid = [], []
             for projector in feature_projectors:
@@ -178,7 +178,7 @@ def feature_extraction(data_cleaned, config, train_mode, suffix,
             numerical_features.extend(projection_features)
             numerical_features_valid.extend(projection_features_valid)
 
-        elif use_aggregations:
+        if use_aggregations:
             agg_features_train, agg_features_valid = _aggregations_features(data_cleaned, config, train_mode, suffix)
             numerical_features.append(agg_features_train)
             numerical_features_valid.append(agg_features_valid)
@@ -195,9 +195,11 @@ def feature_extraction(data_cleaned, config, train_mode, suffix,
         numerical_features, categorical_features = [], []
         if use_raw:
             numerical_features.append(data_cleaned)
-        elif use_is_missing:
+
+        if use_is_missing:
             categorical_features.append(data_cleaned)
-        elif use_projections:
+
+        if use_projections:
             feature_projectors = _get_feature_projectors(config)
             projection_features, projection_features_valid = [], []
             for projector in feature_projectors:
@@ -205,7 +207,7 @@ def feature_extraction(data_cleaned, config, train_mode, suffix,
                 projection_features.append(projected_feature)
             numerical_features.extend(projection_features)
 
-        elif use_aggregations:
+        if use_aggregations:
             agg_features_train = _aggregations_features(data_cleaned, config, train_mode, suffix)
             numerical_features.append(agg_features_train)
 
@@ -262,16 +264,16 @@ def _get_feature_projectors(config):
     feature_projectors = []
     if config.truncated_svd.use:
         feature_projectors.append((TruncatedSVD, config.truncated_svd.params, 'trunc_svd'))
-    elif config.pca.use:
+    if config.pca.use:
         feature_projectors.append((fe.PCA, config.pca.params, 'pca'))
-    elif config.fast_ica.use:
+    if config.fast_ica.use:
         feature_projectors.append((fe.FastICA, config.fast_ica.params, 'fast_ica'))
-    elif config.factor_analysis.use:
+    if config.factor_analysis.use:
         feature_projectors.append((fe.FactorAnalysis, config.factor_analysis.params, 'factor_analysis'))
-    elif config.gaussian_random_projection.use:
+    if config.gaussian_random_projection.use:
         feature_projectors.append(
             (fe.GaussianRandomProjection, config.gaussian_random_projection.params, 'grp'))
-    elif config.sparse_random_projection.use:
+    if config.sparse_random_projection.use:
         feature_projectors.append((fe.SparseRandomProjection, config.sparse_random_projection.params, 'srp'))
     return feature_projectors
 
