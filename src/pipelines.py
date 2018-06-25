@@ -4,22 +4,7 @@ from . import pipeline_blocks as blocks
 
 
 def lightGBM(config, train_mode, suffix='',
-             use_raw=True, use_is_missing=False, use_projections=False, use_aggregations=False):
-    """
-    Cleaning:
-        - drop all constant columns
-        - drop duplicate columns
-        - drop almost all zero set drop_zero_fraction__threshold parameter
-        - 0s treated as missing values (questionable)
-
-    Feature Extraction:
-        - is missing dummy table
-
-    Model:
-        - lighbgbm
-        - all params in neptune.yaml
-        - lightgbm trained on just dummy is_missing table gets 1.51 CV 1.77 LB, interesting
-    """
+             use_raw=True, use_is_missing=False, use_projections=False, use_row_aggregations=False):
     if train_mode:
         cache_output = True
         persist_output = True
@@ -38,9 +23,17 @@ def lightGBM(config, train_mode, suffix='',
                                      persist_output=persist_output,
                                      cache_output=cache_output,
                                      load_persisted_output=load_persisted_output)
-    features = blocks.feature_extraction(data_cleaned, config,
+    if use_row_aggregations:
+        row_aggregation_features = blocks.row_aggregation_features(config, train_mode, suffix,
+                                                                   persist_output=persist_output,
+                                                                   cache_output=cache_output,
+                                                                   load_persisted_output=load_persisted_output)
+    else:
+        row_aggregation_features = None
+
+    features = blocks.feature_extraction(data_cleaned, row_aggregation_features, config,
                                          train_mode, suffix,
-                                         use_raw, use_is_missing, use_projections, use_aggregations,
+                                         use_raw, use_is_missing, use_projections,
                                          persist_output=persist_output,
                                          cache_output=cache_output,
                                          load_persisted_output=load_persisted_output)
@@ -56,31 +49,31 @@ PIPELINES = {'lightGBM_raw': lightGBM,
                                             use_raw=False,
                                             use_is_missing=True,
                                             use_projections=False,
-                                            use_aggregations=False),
+                                            use_row_aggregations=False),
              'lightGBM_projections': partial(lightGBM,
                                              use_raw=False,
                                              use_is_missing=False,
                                              use_projections=True,
-                                             use_aggregations=False),
+                                             use_row_aggregations=False),
              'lightGBM_aggregations': partial(lightGBM,
                                               use_raw=False,
                                               use_is_missing=False,
                                               use_projections=False,
-                                              use_aggregations=True),
+                                              use_row_aggregations=True),
              'lightGBM_raw_projections': partial(lightGBM,
                                                  use_raw=True,
                                                  use_is_missing=False,
                                                  use_projections=True,
-                                                 use_aggregations=False),
+                                                 use_row_aggregations=False),
              'lightGBM_raw_aggregations': partial(lightGBM,
                                                   use_raw=True,
                                                   use_is_missing=False,
                                                   use_projections=False,
-                                                  use_aggregations=True),
+                                                  use_row_aggregations=True),
              'lightGBM_raw_projections_aggregations': partial(lightGBM,
                                                               use_raw=True,
                                                               use_is_missing=False,
                                                               use_projections=True,
-                                                              use_aggregations=True),
+                                                              use_row_aggregations=True),
 
              }

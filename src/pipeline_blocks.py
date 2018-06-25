@@ -153,8 +153,27 @@ def data_cleaning_v2(config, train_mode, suffix, **kwargs):
         return impute_missing
 
 
-def feature_extraction(data_cleaned, config, train_mode, suffix,
-                       use_raw, use_is_missing, use_projections, use_aggregations, **kwargs):
+def row_aggregation_features(config, train_mode, suffix, **kwargs):
+    row_agg_feature = Step(name='row_agg_feature{}'.format(suffix),
+                           transformer=fe.RowAggregationFeatures(),
+                           input_data=['input'],
+                           adapter=Adapter({'X': E('input', 'X')}),
+                           experiment_directory=config.pipeline.experiment_directory, **kwargs)
+
+    if train_mode:
+        row_agg_feature_valid = Step(name='row_agg_feature_valid{}'.format(suffix),
+                                     transformer=row_agg_feature,
+                                     input_data=['input'],
+                                     adapter=Adapter({'X': E('input', 'X_valid')}),
+                                     experiment_directory=config.pipeline.experiment_directory, **kwargs)
+
+        return row_agg_feature, row_agg_feature_valid
+    else:
+        return row_agg_feature
+
+
+def feature_extraction(data_cleaned, row_aggregations, config, train_mode, suffix,
+                       use_raw, use_is_missing, use_projections, **kwargs):
     if train_mode:
         data_cleaned_train, data_cleaned_valid = data_cleaned
         numerical_features, numerical_features_valid = [], []
@@ -178,8 +197,8 @@ def feature_extraction(data_cleaned, config, train_mode, suffix,
             numerical_features.extend(projection_features)
             numerical_features_valid.extend(projection_features_valid)
 
-        if use_aggregations:
-            agg_features_train, agg_features_valid = _aggregations_features(data_cleaned, config, train_mode, suffix)
+        if row_aggregations:
+            agg_features_train, agg_features_valid = row_aggregations
             numerical_features.append(agg_features_train)
             numerical_features_valid.append(agg_features_valid)
 
@@ -207,9 +226,8 @@ def feature_extraction(data_cleaned, config, train_mode, suffix,
                 projection_features.append(projected_feature)
             numerical_features.extend(projection_features)
 
-        if use_aggregations:
-            agg_features_train = _aggregations_features(data_cleaned, config, train_mode, suffix)
-            numerical_features.append(agg_features_train)
+        if row_aggregations:
+            numerical_features.append(row_aggregations)
 
         feature_combiner = _join_features(numerical_features=numerical_features,
                                           numerical_features_valid=[],
@@ -312,25 +330,3 @@ def _projection(projection_config, data_cleaned, config, train_mode, suffix, **k
         return projector_pandas, projector_pandas_valid
     else:
         return projector_pandas
-
-
-def _aggregations_features(data_cleaned, config, train_mode, suffix, **kwargs):
-    if train_mode:
-        data_cleaned, data_cleaned_valid = data_cleaned
-
-    row_agg_feature = Step(name='row_agg_feature{}'.format(suffix),
-                           transformer=fe.RowAggregationFeatures(),
-                           input_steps=[data_cleaned],
-                           adapter=Adapter({'X': E(data_cleaned.name, 'numerical_features')}),
-                           experiment_directory=config.pipeline.experiment_directory, **kwargs)
-
-    if train_mode:
-        row_agg_feature_valid = Step(name='row_agg_feature_valid{}'.format(suffix),
-                                     transformer=row_agg_feature,
-                                     input_steps=[data_cleaned_valid],
-                                     adapter=Adapter({'X': E(data_cleaned_valid.name, 'numerical_features')}),
-                                     experiment_directory=config.pipeline.experiment_directory, **kwargs)
-
-        return row_agg_feature, row_agg_feature_valid
-    else:
-        return row_agg_feature
