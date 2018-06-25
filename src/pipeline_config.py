@@ -26,26 +26,42 @@ SOLUTION_CONFIG = AttrDict({
     'dummies_missing': {'missing_value': MISSING_VALUE,
                         },
 
-    'truncated_svd': {'n_components': params.truncated_svd__n_components,
-                      'n_iter': params.truncated_svd__n_iter,
-                      'random_state': RANDOM_SEED
-                      },
-    'pca': {'n_components': params.pca__n_components,
-            'random_state': RANDOM_SEED
-            },
-    'fast_ica': {'n_components': params.fast_ica__n_components,
-                 'random_state': RANDOM_SEED
-                 },
-    'factor_analysis': {'n_components': params.factor_analysis__n_components,
-                        'random_state': RANDOM_SEED
-                        },
-    'gaussian_random_projection': {'n_components': params.gaussian_random_projection__n_components,
-                                   'eps': params.gaussian_projection__eps,
-                                   'random_state': RANDOM_SEED
-                                   },
-    'sparse_random_projection': {'n_components': params.sparse_random_projection__n_components,
-                                 'dense_output': True,
+    'truncated_svd': {'use': params.truncated_svd__use,
+                      'params': {'n_components': params.truncated_svd__n_components,
+                                 'n_iter': params.truncated_svd__n_iter,
                                  'random_state': RANDOM_SEED
+                                 }
+                      },
+    'pca': {'use': params.pca__use,
+            'params': {'n_components': params.pca__n_components,
+                       'random_state': RANDOM_SEED
+                       }
+            },
+    'fast_ica': {'use': params.fast_ica__use,
+                 'params': {
+                     'n_components': params.fast_ica__n_components,
+                     'random_state': RANDOM_SEED
+                 }
+                 },
+    'factor_analysis': {'use': params.factor_analysis__use,
+                        'params': {
+                            'n_components': params.factor_analysis__n_components,
+                            'random_state': RANDOM_SEED
+                        }
+                        },
+    'gaussian_random_projection': {'use': params.gaussian_random_projection__use,
+                                   'params': {
+                                       'n_components': params.gaussian_random_projection__n_components,
+                                       'eps': params.gaussian_projection__eps,
+                                       'random_state': RANDOM_SEED
+                                   }
+                                   },
+    'sparse_random_projection': {'use': params.sparse_random_projection__use,
+                                 'params': {
+                                     'n_components': params.sparse_random_projection__n_components,
+                                     'dense_output': True,
+                                     'random_state': RANDOM_SEED
+                                 }
                                  },
 
     'light_gbm': {'device': parameter_eval(params.lgbm__device),
