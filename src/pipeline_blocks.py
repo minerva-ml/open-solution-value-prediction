@@ -168,15 +168,7 @@ def feature_extraction(data_cleaned, config, train_mode, suffix,
             categorical_features_valid.append(data_cleaned_valid)
 
         elif use_projections:
-            feature_projectors = [
-                (TruncatedSVD, config.truncated_svd, 'trunc_svd'),
-                (fe.PCA, config.pca, 'pca'),
-                (fe.FastICA, config.fast_ica, 'fast_ica'),
-                (fe.FactorAnalysis, config.factor_analysis, 'factor_analysis'),
-                (fe.GaussianRandomProjection, config.gaussian_random_projection, 'grp'),
-                (fe.SparseRandomProjection, config.sparse_random_projection, 'srp'),
-            ]
-
+            feature_projectors = _get_feature_projectors(config)
             projection_features, projection_features_valid = [], []
             for projector in feature_projectors:
                 projected_feature, projected_feature_valid = _projection(projector, data_cleaned, config,
@@ -206,15 +198,7 @@ def feature_extraction(data_cleaned, config, train_mode, suffix,
         elif use_is_missing:
             categorical_features.append(data_cleaned)
         elif use_projections:
-            feature_projectors = [
-                (TruncatedSVD, config.truncated_svd, 'trunc_svd'),
-                (fe.PCA, config.pca, 'pca'),
-                (fe.FastICA, config.fast_ica, 'fast_ica'),
-                (fe.FactorAnalysis, config.factor_analysis, 'factor_analysis'),
-                (fe.GaussianRandomProjection, config.gaussian_random_projection, 'grp'),
-                (fe.SparseRandomProjection, config.sparse_random_projection, 'srp'),
-            ]
-
+            feature_projectors = _get_feature_projectors(config)
             projection_features, projection_features_valid = [], []
             for projector in feature_projectors:
                 projected_feature = _projection(projector, data_cleaned, config, train_mode, suffix)
@@ -272,6 +256,24 @@ def _join_features(numerical_features,
 
     else:
         return feature_joiner
+
+
+def _get_feature_projectors(config):
+    feature_projectors = []
+    if config.truncated_svd.use:
+        feature_projectors.append((TruncatedSVD, config.truncated_svd.params, 'trunc_svd'))
+    elif config.pca.use:
+        feature_projectors.append((fe.PCA, config.pca.params, 'pca'))
+    elif config.fast_ica.use:
+        feature_projectors.append((fe.FastICA, config.fast_ica.params, 'fast_ica'))
+    elif config.factor_analysis.use:
+        feature_projectors.append((fe.FactorAnalysis, config.factor_analysis.params, 'factor_analysis'))
+    elif config.gaussian_random_projection.use:
+        feature_projectors.append(
+            (fe.GaussianRandomProjection, config.gaussian_random_projection.params, 'grp'))
+    elif config.sparse_random_projection.use:
+        feature_projectors.append((fe.SparseRandomProjection, config.sparse_random_projection.params, 'srp'))
+    return feature_projectors
 
 
 def _projection(projection_config, data_cleaned, config, train_mode, suffix, **kwargs):
