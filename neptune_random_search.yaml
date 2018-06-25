@@ -42,17 +42,22 @@ parameters:
 # Data Cleaning
   drop_zero_fraction__threshold: 0.98
   variance_threshold__threshold: 0.0
-  impute_missing__method: median
 
 # Feature Extraction
-  truncated_svd__n_components: 100
+  truncated_svd__use: True
+  truncated_svd__n_components: 50
   truncated_svd__n_iter: 10
+  pca__use: True
   pca__n_components: 100
-  fast_ica__n_components: 100
-  factor_analysis__n_components: 100
-  gaussian_random_projection__n_components: 100
+  fast_ica__use: True
+  fast_ica__n_components: 15
+  factor_analysis__use: True
+  factor_analysis__n_components: 50
+  gaussian_random_projection__use: True
+  gaussian_random_projection__n_components: 50
   gaussian_projection__eps: 0.1
-  sparse_random_projection__n_components: 100
+  sparse_random_projection__use: True
+  sparse_random_projection__n_components: 50
 
 # Light GBM
   lgbm_random_search_runs: 500
