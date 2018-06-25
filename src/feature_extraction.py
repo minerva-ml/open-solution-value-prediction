@@ -80,3 +80,22 @@ class SparseRandomProjection(BaseDecomposition):
     def __init__(self, **kwargs):
         super().__init__()
         self.estimator = sk_rp.SparseRandomProjection(**kwargs)
+
+
+class RowAggregationFeatures(BaseTransformer):
+    def transform(self, X, **kwargs):
+        X_agg = X.apply(aggregate_row, axis=1)
+        return {'numerical_features': X_agg}
+
+
+def aggregate_row(row):
+    non_zero_values = row.iloc[row.nonzero()]
+    aggs = {'non_zero_mean': non_zero_values.mean(),
+            'non_zero_max': non_zero_values.max(),
+            'non_zero_min': non_zero_values.min(),
+            'non_zero_std': non_zero_values.std(),
+            'non_zero_sum': non_zero_values.sum(),
+            'non_zero_count': non_zero_values.count(),
+            'non_zero_fraction': non_zero_values.count() / row.count()
+            }
+    return pd.Series(aggs)
