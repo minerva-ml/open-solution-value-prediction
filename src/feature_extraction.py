@@ -1,37 +1,12 @@
 import numpy as np
 import pandas as pd
+import sklearn.decomposition as sk_d
+import sklearn.random_projection as sk_rp
+from sklearn.externals import joblib
 from steppy.base import BaseTransformer
 from steppy.utils import get_logger
 
 logger = get_logger()
-
-
-class InferredTypeSplitter(BaseTransformer):
-    def transform(self, X, **kwargs):
-        numerical_columns, categorical_columns = self._get_column_types(X)
-
-        outputs = {'numerical_features': X[numerical_columns],
-                   'categorical_features': X[categorical_columns]
-                   }
-        return outputs
-
-    def _get_column_types(self, X):
-        types = X.dtypes.to_frame().reset_index()
-        types.columns = ['colname', 'type']
-        types['filter'] = types['type'].apply(self._infer_type)
-
-        categorical_columns = types[types['filter'] == 'categorical']['colname'].tolist()
-        numerical_columns = types[types['filter'] == 'numerical']['colname'].tolist()
-        return numerical_columns, categorical_columns
-
-    def _infer_type(self, x):
-        x_ = str(x)
-        if 'float' in x_:
-            return 'numerical'
-        elif 'int' in x_:
-            return 'categorical'
-        else:
-            return 'other'
 
 
 class FeatureJoiner(BaseTransformer):
@@ -55,3 +30,72 @@ class FeatureJoiner(BaseTransformer):
                 feature_names.append(dataframe.name)
 
         return feature_names
+
+
+class BaseDecomposition(BaseTransformer):
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.estimator = None
+
+    def fit(self, features):
+        self.estimator.fit(features)
+        return self
+
+    def transform(self, features):
+        return {'features': self.estimator.transform(features)}
+
+    def load(self, filepath):
+        self.estimator = joblib.load(filepath)
+        return self
+
+    def persist(self, filepath):
+        joblib.dump(self.estimator, filepath)
+
+
+class PCA(BaseDecomposition):
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.estimator = sk_d.PCA(**kwargs)
+
+
+class FastICA(BaseDecomposition):
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.estimator = sk_d.FastICA(**kwargs)
+
+
+class FactorAnalysis(BaseDecomposition):
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.estimator = sk_d.FactorAnalysis(**kwargs)
+
+
+class GaussianRandomProjection(BaseDecomposition):
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.estimator = sk_rp.GaussianRandomProjection(**kwargs)
+
+
+class SparseRandomProjection(BaseDecomposition):
+    def __init__(self, **kwargs):
+        super().__init__()
+        self.estimator = sk_rp.SparseRandomProjection(**kwargs)
+
+
+class RowAggregationFeatures(BaseTransformer):
+    def transform(self, X, **kwargs):
+        X_agg = X.apply(aggregate_row, axis=1)
+        return {'numerical_features': X_agg}
+
+
+def aggregate_row(row):
+    non_zero_values = row.iloc[row.nonzero()]
+    aggs = {'non_zero_mean': non_zero_values.mean(),
+            'non_zero_max': non_zero_values.max(),
+            'non_zero_min': non_zero_values.min(),
+            'non_zero_std': non_zero_values.std(),
+            'non_zero_sum': non_zero_values.sum(),
+            'non_zero_count': non_zero_values.count(),
+            'non_zero_fraction': non_zero_values.count() / row.count()
+            }
+    return pd.Series(aggs)
