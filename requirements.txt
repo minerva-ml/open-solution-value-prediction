@@ -1,6 +1,6 @@
 neptune_cli==2.8.5
 steppy==0.1.4
-steppy-toolkit==0.1.3
+steppy-toolkit==0.1.5
 attrdict==2.0.0
 click==6.7
 lightgbm==2.1.1
