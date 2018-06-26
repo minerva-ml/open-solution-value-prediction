@@ -44,16 +44,16 @@ parameters:
   variance_threshold__threshold: 0.0
 
 # Feature Extraction
-  truncated_svd__use: True
+  truncated_svd__use: False
   truncated_svd__n_components: 50
   truncated_svd__n_iter: 10
-  pca__use: True
+  pca__use: False
   pca__n_components: 100
-  fast_ica__use: True
+  fast_ica__use: False
   fast_ica__n_components: 15
   factor_analysis__use: True
   factor_analysis__n_components: 50
-  gaussian_random_projection__use: True
+  gaussian_random_projection__use: False
   gaussian_random_projection__n_components: 50
   gaussian_projection__eps: 0.1
   sparse_random_projection__use: True
