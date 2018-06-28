@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from scipy.stats import skew, kurtosis
 import sklearn.decomposition as sk_d
 import sklearn.random_projection as sk_rp
 from sklearn.externals import joblib
@@ -91,10 +92,25 @@ class RowAggregationFeatures(BaseTransformer):
 def aggregate_row(row):
     non_zero_values = row.iloc[row.nonzero()]
     aggs = {'non_zero_mean': non_zero_values.mean(),
+            'non_zero_std': non_zero_values.std(),
             'non_zero_max': non_zero_values.max(),
             'non_zero_min': non_zero_values.min(),
-            'non_zero_std': non_zero_values.std(),
             'non_zero_sum': non_zero_values.sum(),
+            'non_zero_skewness': skew(non_zero_values),
+            'non_zero_kurtosis': kurtosis(non_zero_values),
+            'non_zero_median': non_zero_values.median(),
+            'non_zero_q1': np.percentile(non_zero_values, q=25),
+            'non_zero_q3': np.percentile(non_zero_values, q=75),
+            'non_zero_log_mean': np.log1p(non_zero_values).mean(),
+            'non_zero_log_std': np.log1p(non_zero_values).std(),
+            'non_zero_log_max': np.log1p(non_zero_values).max(),
+            'non_zero_log_min': np.log1p(non_zero_values).min(),
+            'non_zero_log_sum': np.log1p(non_zero_values).sum(),
+            'non_zero_log_skewness': skew(np.log1p(non_zero_values)),
+            'non_zero_log_kurtosis': kurtosis(np.log1p(non_zero_values)),
+            'non_zero_log_median': np.log1p(non_zero_values).median(),
+            'non_zero_log_q1': np.percentile(np.log1p(non_zero_values), q=25),
+            'non_zero_log_q3': np.percentile(np.log1p(non_zero_values), q=75),
             'non_zero_count': non_zero_values.count(),
             'non_zero_fraction': non_zero_values.count() / row.count()
             }
