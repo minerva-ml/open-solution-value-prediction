@@ -6,11 +6,11 @@ from . import pipeline_blocks as blocks
 def lightGBM(config, train_mode, suffix='',
              use_raw=True, use_is_missing=False, use_projections=False, use_row_aggregations=False):
     if train_mode:
-        cache_output = True
-        persist_output = True
-        load_persisted_output = True
+        cache_output = False
+        persist_output = False
+        load_persisted_output = False
     else:
-        cache_output = True
+        cache_output = False
         persist_output = False
         load_persisted_output = False
 
