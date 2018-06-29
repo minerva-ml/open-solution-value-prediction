@@ -84,34 +84,77 @@ class SparseRandomProjection(BaseDecomposition):
 
 
 class RowAggregationFeatures(BaseTransformer):
+    def __init__(self, bucket_nr, **kwargs):
+        self.bucket_nr = bucket_nr
+
     def transform(self, X, **kwargs):
-        X_agg = X.apply(aggregate_row, axis=1)
-        return {'numerical_features': X_agg}
+        X_aggs = []
+        for i, column_bucket in enumerate(self._column_bucket_gen(X.columns)):
+            X_bucket_agg = X[column_bucket].apply(aggregate_row, axis=1)
+            X_bucket_agg.columns = self._add_prefix(X_bucket_agg.columns, i)
+            X_aggs.append(X_bucket_agg)
+        X_aggs = pd.concat(X_aggs, axis=1)
+        return {'numerical_features': X_aggs}
+
+    def _column_bucket_gen(self, cols):
+        chunk_size = len(cols) // self.bucket_nr + 1
+        for i in range(0, len(cols), chunk_size):
+            yield cols[i:i + chunk_size]
+
+    def _add_prefix(self, columns, bucket_id):
+        columns = ['{}_of_{}_{}'.format(self.bucket_nr, bucket_id, col)
+                   for col in columns]
+        return columns
 
 
 def aggregate_row(row):
     non_zero_values = row.iloc[row.nonzero()]
-    aggs = {'non_zero_mean': non_zero_values.mean(),
-            'non_zero_std': non_zero_values.std(),
-            'non_zero_max': non_zero_values.max(),
-            'non_zero_min': non_zero_values.min(),
-            'non_zero_sum': non_zero_values.sum(),
-            'non_zero_skewness': skew(non_zero_values),
-            'non_zero_kurtosis': kurtosis(non_zero_values),
-            'non_zero_median': non_zero_values.median(),
-            'non_zero_q1': np.percentile(non_zero_values, q=25),
-            'non_zero_q3': np.percentile(non_zero_values, q=75),
-            'non_zero_log_mean': np.log1p(non_zero_values).mean(),
-            'non_zero_log_std': np.log1p(non_zero_values).std(),
-            'non_zero_log_max': np.log1p(non_zero_values).max(),
-            'non_zero_log_min': np.log1p(non_zero_values).min(),
-            'non_zero_log_sum': np.log1p(non_zero_values).sum(),
-            'non_zero_log_skewness': skew(np.log1p(non_zero_values)),
-            'non_zero_log_kurtosis': kurtosis(np.log1p(non_zero_values)),
-            'non_zero_log_median': np.log1p(non_zero_values).median(),
-            'non_zero_log_q1': np.percentile(np.log1p(non_zero_values), q=25),
-            'non_zero_log_q3': np.percentile(np.log1p(non_zero_values), q=75),
-            'non_zero_count': non_zero_values.count(),
-            'non_zero_fraction': non_zero_values.count() / row.count()
-            }
+    if non_zero_values.empty:
+        aggs = {'non_zero_mean': 0,
+                'non_zero_std': 0,
+                'non_zero_max': 0,
+                'non_zero_min': 0,
+                'non_zero_sum': 0,
+                'non_zero_skewness': 0,
+                'non_zero_kurtosis': 0,
+                'non_zero_median': 0,
+                'non_zero_q1': 0,
+                'non_zero_q3': 0,
+                'non_zero_log_mean': 0,
+                'non_zero_log_std': 0,
+                'non_zero_log_max': 0,
+                'non_zero_log_min': 0,
+                'non_zero_log_sum': 0,
+                'non_zero_log_skewness': 0,
+                'non_zero_log_kurtosis': 0,
+                'non_zero_log_median': 0,
+                'non_zero_log_q1': 0,
+                'non_zero_log_q3': 0,
+                'non_zero_count': 0,
+                'non_zero_fraction': 0
+                }
+    else:
+        aggs = {'non_zero_mean': non_zero_values.mean(),
+                'non_zero_std': non_zero_values.std(),
+                'non_zero_max': non_zero_values.max(),
+                'non_zero_min': non_zero_values.min(),
+                'non_zero_sum': non_zero_values.sum(),
+                'non_zero_skewness': skew(non_zero_values),
+                'non_zero_kurtosis': kurtosis(non_zero_values),
+                'non_zero_median': non_zero_values.median(),
+                'non_zero_q1': np.percentile(non_zero_values, q=25),
+                'non_zero_q3': np.percentile(non_zero_values, q=75),
+                'non_zero_log_mean': np.log1p(non_zero_values).mean(),
+                'non_zero_log_std': np.log1p(non_zero_values).std(),
+                'non_zero_log_max': np.log1p(non_zero_values).max(),
+                'non_zero_log_min': np.log1p(non_zero_values).min(),
+                'non_zero_log_sum': np.log1p(non_zero_values).sum(),
+                'non_zero_log_skewness': skew(np.log1p(non_zero_values)),
+                'non_zero_log_kurtosis': kurtosis(np.log1p(non_zero_values)),
+                'non_zero_log_median': np.log1p(non_zero_values).median(),
+                'non_zero_log_q1': np.percentile(np.log1p(non_zero_values), q=25),
+                'non_zero_log_q3': np.percentile(np.log1p(non_zero_values), q=75),
+                'non_zero_count': non_zero_values.count(),
+                'non_zero_fraction': non_zero_values.count() / row.count()
+                }
     return pd.Series(aggs)

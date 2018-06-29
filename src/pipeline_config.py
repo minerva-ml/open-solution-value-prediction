@@ -26,6 +26,9 @@ SOLUTION_CONFIG = AttrDict({
     'dummies_missing': {'missing_value': MISSING_VALUE,
                         },
 
+    'row_aggregations': {'bucket_nrs': parameter_eval(params.row_aggregations__bucket_nrs)
+                         },
+
     'truncated_svd': {'use': params.truncated_svd__use,
                       'params': {'n_components': params.truncated_svd__n_components,
                                  'n_iter': params.truncated_svd__n_iter,

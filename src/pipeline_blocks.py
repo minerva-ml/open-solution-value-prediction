@@ -154,22 +154,29 @@ def data_cleaning_v2(config, train_mode, suffix, **kwargs):
 
 
 def row_aggregation_features(config, train_mode, suffix, **kwargs):
-    row_agg_feature = Step(name='row_agg_feature{}'.format(suffix),
-                           transformer=fe.RowAggregationFeatures(),
-                           input_data=['input'],
-                           adapter=Adapter({'X': E('input', 'X')}),
-                           experiment_directory=config.pipeline.experiment_directory, **kwargs)
+    bucket_nrs = config.row_aggregations.bucket_nrs
+    row_agg_features = []
+    for bucket_nr in bucket_nrs:
+        row_agg_feature = Step(name='row_agg_feature_bucket_nr{}_{}'.format(bucket_nr, suffix),
+                               transformer=fe.RowAggregationFeatures(bucket_nr=bucket_nr),
+                               input_data=['input'],
+                               adapter=Adapter({'X': E('input', 'X')}),
+                               experiment_directory=config.pipeline.experiment_directory, **kwargs)
+        row_agg_features.append(row_agg_feature)
 
     if train_mode:
-        row_agg_feature_valid = Step(name='row_agg_feature_valid{}'.format(suffix),
-                                     transformer=row_agg_feature,
-                                     input_data=['input'],
-                                     adapter=Adapter({'X': E('input', 'X_valid')}),
-                                     experiment_directory=config.pipeline.experiment_directory, **kwargs)
+        row_agg_features_valid = []
+        for bucket_nr, row_agg_feature in zip(bucket_nrs, row_agg_features):
+            row_agg_feature_valid = Step(name='row_agg_feature_bucket_nr{}_valid{}'.format(bucket_nr, suffix),
+                                         transformer=row_agg_feature,
+                                         input_data=['input'],
+                                         adapter=Adapter({'X': E('input', 'X_valid')}),
+                                         experiment_directory=config.pipeline.experiment_directory, **kwargs)
+            row_agg_features_valid.append(row_agg_feature_valid)
 
-        return row_agg_feature, row_agg_feature_valid
+        return row_agg_features, row_agg_features_valid
     else:
-        return row_agg_feature
+        return row_agg_features
 
 
 def feature_extraction(data_cleaned, row_aggregations, config, train_mode, suffix,
@@ -199,8 +206,8 @@ def feature_extraction(data_cleaned, row_aggregations, config, train_mode, suffi
 
         if row_aggregations:
             agg_features_train, agg_features_valid = row_aggregations
-            numerical_features.append(agg_features_train)
-            numerical_features_valid.append(agg_features_valid)
+            numerical_features.extend(agg_features_train)
+            numerical_features_valid.extend(agg_features_valid)
 
         feature_combiner, feature_combiner_valid = _join_features(numerical_features=numerical_features,
                                                                   numerical_features_valid=numerical_features_valid,
@@ -227,7 +234,7 @@ def feature_extraction(data_cleaned, row_aggregations, config, train_mode, suffi
             numerical_features.extend(projection_features)
 
         if row_aggregations:
-            numerical_features.append(row_aggregations)
+            numerical_features.extend(row_aggregations)
 
         feature_combiner = _join_features(numerical_features=numerical_features,
                                           numerical_features_valid=[],

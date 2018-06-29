@@ -75,11 +75,6 @@ PIPELINES = {'lightGBM_raw': lightGBM,
                                                   use_raw=True,
                                                   use_is_missing=False,
                                                   use_projections=False,
-                                                  use_row_aggregations=True),
-             'lightGBM_raw_projections_aggregations': partial(lightGBM,
-                                                              use_raw=True,
-                                                              use_is_missing=False,
-                                                              use_projections=True,
-                                                              use_row_aggregations=True),
+                                                  use_row_aggregations=True)
 
              }
