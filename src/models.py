@@ -13,7 +13,7 @@ ctx = neptune.Context()
 
 
 class LightGBM(BaseTransformer):
-    def __init__(self, name=None ** params):
+    def __init__(self, name=None, **params):
         super().__init__()
         logger.info('initializing LightGBM...')
         self.params = params
