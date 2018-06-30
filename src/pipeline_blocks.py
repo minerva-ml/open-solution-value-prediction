@@ -158,7 +158,7 @@ def row_aggregation_features(config, train_mode, suffix, **kwargs):
     bucket_nrs = config.row_aggregations.bucket_nrs
     row_agg_features = []
     for bucket_nr in bucket_nrs:
-        row_agg_feature = Step(name='row_agg_feature_bucket_nr{}_{}'.format(bucket_nr, suffix),
+        row_agg_feature = Step(name='row_agg_feature_bucket_nr{}{}'.format(bucket_nr, suffix),
                                transformer=fe.RowAggregationFeatures(bucket_nr=bucket_nr),
                                input_data=['input'],
                                adapter=Adapter({'X': E('input', 'X')}),
