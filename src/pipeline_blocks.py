@@ -283,18 +283,20 @@ def _join_features(numerical_features,
 def _get_feature_projectors(config):
     feature_projectors = []
     if config.truncated_svd.use:
-        feature_projectors.append((TruncatedSVD, config.truncated_svd.params, 'trunc_svd'))
+        feature_projectors.append((TruncatedSVD, config.truncated_svd.params, 'truncated svd'))
     if config.pca.use:
         feature_projectors.append((fe.PCA, config.pca.params, 'pca'))
     if config.fast_ica.use:
-        feature_projectors.append((fe.FastICA, config.fast_ica.params, 'fast_ica'))
+        feature_projectors.append((fe.FastICA, config.fast_ica.params, 'fast ica'))
     if config.factor_analysis.use:
-        feature_projectors.append((fe.FactorAnalysis, config.factor_analysis.params, 'factor_analysis'))
+        feature_projectors.append((fe.FactorAnalysis, config.factor_analysis.params, 'factor analysis'))
     if config.gaussian_random_projection.use:
         feature_projectors.append(
-            (fe.GaussianRandomProjection, config.gaussian_random_projection.params, 'grp'))
+            (fe.GaussianRandomProjection, config.gaussian_random_projection.params, 'gaussian random projection'))
     if config.sparse_random_projection.use:
-        feature_projectors.append((fe.SparseRandomProjection, config.sparse_random_projection.params, 'srp'))
+        feature_projectors.append((fe.SparseRandomProjection,
+                                   config.sparse_random_projection.params,
+                                   'sparse random projection'))
     return feature_projectors
 
 
