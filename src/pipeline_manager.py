@@ -10,7 +10,7 @@ from . import pipeline_config as cfg
 from .pipelines import PIPELINES
 from .utils import init_logger, NeptuneContext, set_seed, \
     create_submission, verify_submission, \
-    log_root_mean_squared_error, KFoldByTargetValue
+    root_mean_squared_log_error, KFoldByTargetValue
 
 neptune_ctx = NeptuneContext()
 params = neptune_ctx.params
@@ -107,10 +107,10 @@ def evaluate(pipeline_name, dev_mode):
 
     y_pred = output['prediction']
 
-    logger.info('Calculating LRMSE on validation set')
-    score = log_root_mean_squared_error(y_true, y_pred)
-    logger.info('LRMSE score on validation is {}'.format(score))
-    ctx.channel_send('LRMSE', 0, score)
+    logger.info('Calculating RMSLE on validation set')
+    score = root_mean_squared_log_error(y_true, y_pred)
+    logger.info('RMSLE score on validation is {}'.format(score))
+    ctx.channel_send('RMSLE', 0, score)
 
 
 def predict(pipeline_name, dev_mode, submit_predictions):
@@ -151,8 +151,8 @@ def predict(pipeline_name, dev_mode, submit_predictions):
 
 
 def make_submission(submission_filepath):
-    logger.info('making Kaggle submit...')
-    os.system('kaggle competitions submit -c santander-value-prediction-challenge -f {} -m {}'
+    logger.info('Making Kaggle submit...')
+    os.system('Kaggle competitions submit -c santander-value-prediction-challenge -f {} -m {}'
               .format(submission_filepath, params.kaggle_message))
 
 
@@ -163,7 +163,7 @@ def train_evaluate_cv(pipeline_name, dev_mode):
 
     logger.info('Reading data...')
     if dev_mode:
-        logger.info('running in "dev-mode". Sample size is: {}'.format(cfg.DEV_SAMPLE_SIZE))
+        logger.info('Running in "dev-mode". Sample size is: {}'.format(cfg.DEV_SAMPLE_SIZE))
         train = pd.read_csv(params.train_filepath, nrows=cfg.DEV_SAMPLE_SIZE)
     else:
         train = pd.read_csv(params.train_filepath)
@@ -183,16 +183,16 @@ def train_evaluate_cv(pipeline_name, dev_mode):
 
         score, _, _ = _fold_fit_evaluate_loop(train_data_split, valid_data_split, fold_id, pipeline_name)
 
-        logger.info('Fold {} LRMSE {}'.format(fold_id, score))
-        ctx.channel_send('Fold {} LRMSE'.format(fold_id), 0, score)
+        logger.info('Fold {} RMSLE {}'.format(fold_id, score))
+        ctx.channel_send('Fold {} RMSLE'.format(fold_id), 0, score)
 
         fold_scores.append(score)
 
     score_mean, score_std = np.mean(fold_scores), np.std(fold_scores)
 
-    logger.info('LRMSE mean {}, LRMSE std {}'.format(score_mean, score_std))
-    ctx.channel_send('LRMSE', 0, score_mean)
-    ctx.channel_send('LRMSE STD', 0, score_std)
+    logger.info('RMSLE mean {}, RMSLE std {}'.format(score_mean, score_std))
+    ctx.channel_send('RMSLE', 0, score_mean)
+    ctx.channel_send('RMSLE STD', 0, score_std)
 
 
 def train_evaluate_predict_cv(pipeline_name, dev_mode, submit_predictions):
@@ -226,8 +226,8 @@ def train_evaluate_predict_cv(pipeline_name, dev_mode, submit_predictions):
                                                                                          valid_data_split, test,
                                                                                          fold_id, pipeline_name)
 
-        logger.info('Fold {} LRMSE {}'.format(fold_id, score))
-        ctx.channel_send('Fold {} LRMSE'.format(fold_id), 0, score)
+        logger.info('Fold {} RMSLE {}'.format(fold_id, score))
+        ctx.channel_send('Fold {} RMSLE'.format(fold_id), 0, score)
 
         out_of_fold_train_predictions.append(out_of_fold_prediction)
         out_of_fold_test_predictions.append(test_prediction)
@@ -239,9 +239,9 @@ def train_evaluate_predict_cv(pipeline_name, dev_mode, submit_predictions):
     test_prediction_aggregated = _aggregate_test_prediction(out_of_fold_test_predictions)
     score_mean, score_std = np.mean(fold_scores), np.std(fold_scores)
 
-    logger.info('LRMSE mean {}, LRMSE std {}'.format(score_mean, score_std))
-    ctx.channel_send('LRMSE', 0, score_mean)
-    ctx.channel_send('LRMSE STD', 0, score_std)
+    logger.info('RMSLE mean {}, RMSLE std {}'.format(score_mean, score_std))
+    ctx.channel_send('RMSLE', 0, score_mean)
+    ctx.channel_send('RMSLE STD', 0, score_std)
 
     logger.info('Saving predictions')
     out_of_fold_train_predictions.to_csv(os.path.join(params.experiment_directory,
@@ -319,7 +319,7 @@ def _fold_fit_evaluate_loop(train_data_split, valid_data_split, fold_id, pipelin
 
     y_valid_pred = output_valid['prediction']
     y_valid_true = valid_data_split[cfg.TARGET_COLUMN].values
-    score = log_root_mean_squared_error(y_valid_true, y_valid_pred)
+    score = root_mean_squared_log_error(y_valid_true, y_valid_pred)
 
     return score, y_valid_pred, pipeline
 
