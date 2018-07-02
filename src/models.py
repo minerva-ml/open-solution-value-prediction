@@ -1,9 +1,9 @@
+import lightgbm as lgb
 import numpy as np
 import pandas as pd
-import lightgbm as lgb
 from attrdict import AttrDict
-from sklearn.externals import joblib
 from deepsense import neptune
+from sklearn.externals import joblib
 from steppy.base import BaseTransformer
 
 from .utils import get_logger
@@ -15,7 +15,8 @@ ctx = neptune.Context()
 class LightGBM(BaseTransformer):
     def __init__(self, name=None, **params):
         super().__init__()
-        logger.info('initializing LightGBM...')
+        self.msg_prefix = 'LightGBM transformer'
+        logger.info('initializing {}.'.format(self.msg_prefix))
         self.params = params
         self.training_params = ['number_boosting_rounds', 'early_stopping_rounds']
         self.evaluation_function = None
@@ -32,10 +33,8 @@ class LightGBM(BaseTransformer):
                          if param in self.training_params})
 
     def fit(self,
-            X,
-            y,
-            X_valid,
-            y_valid,
+            X, y,
+            X_valid, y_valid,
             feature_names='auto',
             categorical_features='auto',
             **kwargs):
@@ -43,13 +42,13 @@ class LightGBM(BaseTransformer):
 
         self._check_target_shape_and_type(y, 'y')
         self._check_target_shape_and_type(y_valid, 'y_valid')
-        y = self._format_target(y)
-        y_valid = self._format_target(y_valid)
+        y = self._format_target(y, 'y')
+        y_valid = self._format_target(y_valid, 'y_valid')
 
-        logger.info('LightGBM, train data shape        {}'.format(X.shape))
-        logger.info('LightGBM, validation data shape   {}'.format(X_valid.shape))
-        logger.info('LightGBM, train labels shape      {}'.format(y.shape))
-        logger.info('LightGBM, validation labels shape {}'.format(y_valid.shape))
+        logger.info('{}, train data shape        {}'.format(self.msg_prefix, X.shape))
+        logger.info('{}, validation data shape   {}'.format(self.msg_prefix, X_valid.shape))
+        logger.info('{}, train labels shape      {}'.format(self.msg_prefix, y.shape))
+        logger.info('{}, validation labels shape {}'.format(self.msg_prefix, y_valid.shape))
 
         data_train = lgb.Dataset(data=X,
                                  label=y,
@@ -91,17 +90,21 @@ class LightGBM(BaseTransformer):
     def _check_target_shape_and_type(self, target, name):
         if not any([isinstance(target, obj_type) for obj_type in [pd.Series, np.ndarray, list]]):
             raise TypeError(
-                '"{}" must be "numpy.ndarray" or "Pandas.Series" or "list", got {} instead.'.format(type(target)))
+                '{}: "{}" must be "numpy.ndarray" or "Pandas.Series" or "list", got {} instead.'.format(
+                    self.msg_prefix,
+                    name,
+                    type(target)))
         try:
-            assert len(target.shape) == 1, '"{}" must be 1-D. It is {}-D instead.'.format(name,
-                                                                                          len(target.shape))
+            assert len(target.shape) == 1, '{}: "{}" must be 1-D. It is {}-D instead.'.format(self.msg_prefix,
+                                                                                              name,
+                                                                                              len(target.shape))
         except AttributeError:
-            print('Cannot determine shape of the {}. '
-                  'Type must be "numpy.ndarray" or "Pandas.Series" or "list", got {} instead'.format(name,
+            print('{}: cannot determine shape of the {}.'
+                  'Type must be "numpy.ndarray" or "Pandas.Series" or "list", got {} instead'.format(self.msg_prefix,
+                                                                                                     name,
                                                                                                      type(target)))
 
-    def _format_target(self, target):
-
+    def _format_target(self, target, name):
         if isinstance(target, pd.Series):
             return target.values
         elif isinstance(target, np.ndarray):
@@ -109,8 +112,10 @@ class LightGBM(BaseTransformer):
         elif isinstance(target, list):
             return np.array(target)
         else:
-            raise TypeError(
-                '"{}" must be "numpy.ndarray" or "Pandas.Series" or "list", got {} instead.'.format(type(target)))
+            raise TypeError('{}: "{}" must be "numpy.ndarray" or "Pandas.Series" or "list", got {} instead.'.format(
+                self.msg_prefix,
+                name,
+                type(target)))
 
 
 def callbacks(channel_prefix):

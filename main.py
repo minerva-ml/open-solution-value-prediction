@@ -1,4 +1,5 @@
 import click
+
 from src.pipeline_manager import PipelineManager
 
 pipeline_manager = PipelineManager()

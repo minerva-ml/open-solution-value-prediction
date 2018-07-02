@@ -1,6 +1,5 @@
 import logging
 import os
-import re
 import random
 import sys
 
@@ -9,7 +8,7 @@ import pandas as pd
 import yaml
 from attrdict import AttrDict
 from sklearn.metrics import mean_squared_error
-from sklearn.model_selection import KFold, BaseCrossValidator
+from sklearn.model_selection import BaseCrossValidator
 from steppy.base import BaseTransformer
 
 

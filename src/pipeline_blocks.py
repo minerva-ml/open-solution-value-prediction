@@ -2,14 +2,14 @@ from functools import partial
 
 import numpy as np
 from steppy.adapter import Adapter, E
-from steppy.base import Step, BaseTransformer
+from steppy.base import Step
 from toolkit.preprocessing.misc import TruncatedSVD
 
 from . import data_cleaning as dc
 from . import feature_extraction as fe
 from .hyperparameter_tuning import RandomSearchOptimizer, NeptuneMonitor, PersistResults
-from .utils import make_transformer, root_mean_squared_error, to_pandas
 from .models import LightGBM
+from .utils import make_transformer, root_mean_squared_error, to_pandas
 
 
 def classifier_light_gbm(features, config, train_mode, suffix='', **kwargs):
@@ -102,9 +102,7 @@ def data_cleaning_v1(config, train_mode, suffix, **kwargs):
         drop_constant_valid = Step(name='drop_constant_valid{}'.format(suffix),
                                    transformer=drop_constant,
                                    input_data=['input'],
-                                   adapter=Adapter({'X': E('input', 'X_valid'),
-                                                    }
-                                                   ),
+                                   adapter=Adapter({'X': E('input', 'X_valid')}),
                                    experiment_directory=config.pipeline.experiment_directory, **kwargs)
 
         drop_duplicate_valid = Step(name='drop_duplicate_valid{}'.format(suffix),
@@ -136,18 +134,14 @@ def data_cleaning_v2(config, train_mode, suffix, **kwargs):
     impute_missing = Step(name='dummies_missing{}'.format(suffix),
                           transformer=dc.DummiesMissing(**config.dummies_missing),
                           input_steps=[cleaned_data],
-                          adapter=Adapter({'X': E(cleaned_data.name, 'numerical_features'),
-                                           }
-                                          ),
+                          adapter=Adapter({'X': E(cleaned_data.name, 'numerical_features')}),
                           experiment_directory=config.pipeline.experiment_directory, **kwargs)
 
     if train_mode:
         impute_missing_valid = Step(name='dummies_missing_valid{}'.format(suffix),
                                     transformer=impute_missing,
                                     input_steps=[cleaned_data_valid],
-                                    adapter=Adapter({'X': E(cleaned_data_valid.name, 'numerical_features'),
-                                                     }
-                                                    ),
+                                    adapter=Adapter({'X': E(cleaned_data_valid.name, 'numerical_features')}),
                                     experiment_directory=config.pipeline.experiment_directory, **kwargs)
         return impute_missing, impute_missing_valid
     else:
@@ -317,8 +311,8 @@ def _projection(projection_config, data_cleaned, config, train_mode, suffix, **k
                      experiment_directory=config.pipeline.experiment_directory, **kwargs)
 
     projector_pandas = Step(name='{}_pandas{}'.format(transformer_name, suffix),
-                            transformer=make_transformer(partial(to_pandas, column_prefix=transformer_name)
-                                                         , output_name='numerical_features'),
+                            transformer=make_transformer(partial(to_pandas, column_prefix=transformer_name),
+                                                         output_name='numerical_features'),
                             input_steps=[projector],
                             adapter=Adapter({'x': E(projector.name, 'features')}),
                             experiment_directory=config.pipeline.experiment_directory, **kwargs)
@@ -327,8 +321,7 @@ def _projection(projection_config, data_cleaned, config, train_mode, suffix, **k
         projector_valid = Step(name='{}_valid{}'.format(transformer_name, suffix),
                                transformer=projector,
                                input_steps=[data_cleaned_valid],
-                               adapter=Adapter({'features': E(data_cleaned_valid.name, 'numerical_features')}
-                                               ),
+                               adapter=Adapter({'features': E(data_cleaned_valid.name, 'numerical_features')}),
                                experiment_directory=config.pipeline.experiment_directory, **kwargs)
         projector_pandas_valid = Step(name='{}_pandas_valid{}'.format(transformer_name, suffix),
                                       transformer=projector_pandas,
