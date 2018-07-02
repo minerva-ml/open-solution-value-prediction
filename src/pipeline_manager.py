@@ -3,22 +3,24 @@ import shutil
 
 import numpy as np
 import pandas as pd
-from deepsense import neptune
 from scipy.stats import gmean
 from sklearn.model_selection import train_test_split
 
 from . import pipeline_config as cfg
 from .pipelines import PIPELINES
-from .utils import init_logger, read_params, set_seed, create_submission, verify_submission, \
+from .utils import init_logger, NeptuneContext, set_seed,\
+    create_submission, verify_submission, \
     log_root_mean_squared_error, KFoldByTargetValue
+
+neptune_ctx = NeptuneContext()
+params = neptune_ctx.params
+ctx = neptune_ctx.ctx
 
 set_seed(cfg.RANDOM_SEED)
 logger = init_logger()
-ctx = neptune.Context()
-params = read_params(ctx, fallback_file='neptune.yaml')
 
 
-class PipelineManager():
+class PipelineManager:
     def train(self, pipeline_name, dev_mode):
         train(pipeline_name, dev_mode)
 
