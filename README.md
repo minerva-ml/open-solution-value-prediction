@@ -20,7 +20,7 @@ In this open source solution you will find references to the neptune.ml. It is f
 ## Installation
 ### Fast Track
 1. Clone repository and install requirements (check _requirements.txt_)
-1. Register to the [neptune.ml](https://neptune.ml) _(if you wish to use it)_
+1. Register to the [neptune.ml](https://neptune.ml/login) _(if you wish to use it)_
 1. Run experiment:
 ```bash
 neptune run --config neptune_random_search.yaml main.py train_evaluate_predict --pipeline_name SOME_NAME
@@ -35,7 +35,7 @@ git clone https://github.com/minerva-ml/open-solution-value-prediction.git
 ```bash
 pip3 install requirements.txt
 ```
-3. Register to the [neptune.ml](https://neptune.ml) _(if you wish to use it)_
+3. Register to the [neptune.ml](https://neptune.ml/login) _(if you wish to use it)_
 4. Update data directories in the [neptune.yaml](https://github.com/minerva-ml/open-solution-value-prediction/blob/master/neptune.yaml) configuration file
 5. Run experiment:
 ```bash
