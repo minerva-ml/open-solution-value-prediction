@@ -109,7 +109,7 @@ class RowAggregationFeatures(BaseTransformer):
 
 
 def aggregate_row(row):
-    non_zero_values = row.iloc[row.nonzero()]
+    non_zero_values = row.iloc[row.nonzero()].astype(np.float)
     if non_zero_values.empty:
         aggregations = {'non_zero_mean': np.nan,
                         'non_zero_std': np.nan,
