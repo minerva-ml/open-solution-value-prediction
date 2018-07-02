@@ -1,11 +1,11 @@
 project: ORGANIZATION/Santander-Value-Prediction-Challenge
 
 name: Santander-Value-Prediction-Challenge
-tags: [solution-2]
+tags: [solution-3]
 
 metric:
-  channel: 'ROC_AUC'
-  goal: maximize
+  channel: 'RMSLE'
+  goal: minimize
 
 exclude:
   - output
@@ -22,12 +22,12 @@ parameters:
 # Data
   train_filepath:             YOUR/PATH/TO/train.csv
   test_filepath:              YOUR/PATH/TO/test.csv
-  sample_submission_filepath: YOUR/PATH/TO/test.csv/sample_submission.csv
+  sample_submission_filepath: YOUR/PATH/TO/sample_submission.csv
   experiment_directory:       YOUR/PATH/WORKDIR
 
 # Kaggle
   kaggle_api: 0
-  kaggle_message: 'solution-2'
+  kaggle_message: 'solution-3'
 
 # Data preparation
   n_cv_splits: 5
@@ -44,6 +44,7 @@ parameters:
   variance_threshold__threshold: 0.0
 
 # Feature Extraction
+  row_aggregations__bucket_nrs: "[1, 2]"
   truncated_svd__use: False
   truncated_svd__n_components: 50
   truncated_svd__n_iter: 10
@@ -66,15 +67,15 @@ parameters:
   lgbm__objective: rmse
   lgbm__metric: rmse
   lgbm__number_boosting_rounds: 10000
-  lgbm__early_stopping_rounds: 100
-  lgbm__learning_rate: 0.01
-  lgbm__num_leaves: 180
+  lgbm__early_stopping_rounds: 1000
+  lgbm__learning_rate: 0.001
+  lgbm__num_leaves: 16
   lgbm__max_depth: -1
   lgbm__min_child_samples: 1
-  lgbm__max_bin: 255  # at most 255 for device=gpu
-  lgbm__subsample: 0.5
-  lgbm__subsample_freq: 4
-  lgbm__colsample_bytree: 0.5
+  lgbm__max_bin: 300
+  lgbm__subsample: 1.0
+  lgbm__subsample_freq: 1
+  lgbm__colsample_bytree: 0.1
   lgbm__min_child_weight: 10
   lgbm__reg_lambda: 0.1
   lgbm__reg_alpha: 0.0

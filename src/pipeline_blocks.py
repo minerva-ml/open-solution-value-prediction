@@ -2,17 +2,18 @@ from functools import partial
 
 import numpy as np
 from steppy.adapter import Adapter, E
-from steppy.base import Step, BaseTransformer
+from steppy.base import Step
 from toolkit.preprocessing.misc import TruncatedSVD
 
 from . import data_cleaning as dc
 from . import feature_extraction as fe
 from .hyperparameter_tuning import RandomSearchOptimizer, NeptuneMonitor, PersistResults
-from .utils import make_transformer, root_mean_squared_error, to_pandas
 from .models import LightGBM
+from .utils import make_transformer, root_mean_squared_error, to_pandas
 
 
 def classifier_light_gbm(features, config, train_mode, suffix='', **kwargs):
+    model_name = 'light_gbm{}'.format(suffix)
     if train_mode:
         features_train, features_valid = features
         log_target = Step(name='log_target{}'.format(suffix),
@@ -42,9 +43,9 @@ def classifier_light_gbm(features, config, train_mode, suffix='', **kwargs):
                                                         **config.random_search.light_gbm.callbacks.persist_results)]
                                                 )
         else:
-            transformer = LightGBM(**config.light_gbm)
+            transformer = LightGBM(name=model_name, **config.light_gbm)
 
-        light_gbm = Step(name='light_gbm{}'.format(suffix),
+        light_gbm = Step(name=model_name,
                          transformer=transformer,
                          input_data=['input'],
                          input_steps=[features_train, features_valid, log_target, log_target_valid],
@@ -57,8 +58,8 @@ def classifier_light_gbm(features, config, train_mode, suffix='', **kwargs):
                                           }),
                          experiment_directory=config.pipeline.experiment_directory, **kwargs)
     else:
-        light_gbm = Step(name='light_gbm{}'.format(suffix),
-                         transformer=LightGBM(**config.light_gbm),
+        light_gbm = Step(name=model_name,
+                         transformer=LightGBM(name=model_name, **config.light_gbm),
                          input_steps=[features],
                          adapter=Adapter({'X': E(features.name, 'features')}),
                          experiment_directory=config.pipeline.experiment_directory, **kwargs)
@@ -101,9 +102,7 @@ def data_cleaning_v1(config, train_mode, suffix, **kwargs):
         drop_constant_valid = Step(name='drop_constant_valid{}'.format(suffix),
                                    transformer=drop_constant,
                                    input_data=['input'],
-                                   adapter=Adapter({'X': E('input', 'X_valid'),
-                                                    }
-                                                   ),
+                                   adapter=Adapter({'X': E('input', 'X_valid')}),
                                    experiment_directory=config.pipeline.experiment_directory, **kwargs)
 
         drop_duplicate_valid = Step(name='drop_duplicate_valid{}'.format(suffix),
@@ -135,18 +134,14 @@ def data_cleaning_v2(config, train_mode, suffix, **kwargs):
     impute_missing = Step(name='dummies_missing{}'.format(suffix),
                           transformer=dc.DummiesMissing(**config.dummies_missing),
                           input_steps=[cleaned_data],
-                          adapter=Adapter({'X': E(cleaned_data.name, 'numerical_features'),
-                                           }
-                                          ),
+                          adapter=Adapter({'X': E(cleaned_data.name, 'numerical_features')}),
                           experiment_directory=config.pipeline.experiment_directory, **kwargs)
 
     if train_mode:
         impute_missing_valid = Step(name='dummies_missing_valid{}'.format(suffix),
                                     transformer=impute_missing,
                                     input_steps=[cleaned_data_valid],
-                                    adapter=Adapter({'X': E(cleaned_data_valid.name, 'numerical_features'),
-                                                     }
-                                                    ),
+                                    adapter=Adapter({'X': E(cleaned_data_valid.name, 'numerical_features')}),
                                     experiment_directory=config.pipeline.experiment_directory, **kwargs)
         return impute_missing, impute_missing_valid
     else:
@@ -154,22 +149,29 @@ def data_cleaning_v2(config, train_mode, suffix, **kwargs):
 
 
 def row_aggregation_features(config, train_mode, suffix, **kwargs):
-    row_agg_feature = Step(name='row_agg_feature{}'.format(suffix),
-                           transformer=fe.RowAggregationFeatures(),
-                           input_data=['input'],
-                           adapter=Adapter({'X': E('input', 'X')}),
-                           experiment_directory=config.pipeline.experiment_directory, **kwargs)
+    bucket_nrs = config.row_aggregations.bucket_nrs
+    row_agg_features = []
+    for bucket_nr in bucket_nrs:
+        row_agg_feature = Step(name='row_agg_feature_bucket_nr{}{}'.format(bucket_nr, suffix),
+                               transformer=fe.RowAggregationFeatures(bucket_nr=bucket_nr),
+                               input_data=['input'],
+                               adapter=Adapter({'X': E('input', 'X')}),
+                               experiment_directory=config.pipeline.experiment_directory, **kwargs)
+        row_agg_features.append(row_agg_feature)
 
     if train_mode:
-        row_agg_feature_valid = Step(name='row_agg_feature_valid{}'.format(suffix),
-                                     transformer=row_agg_feature,
-                                     input_data=['input'],
-                                     adapter=Adapter({'X': E('input', 'X_valid')}),
-                                     experiment_directory=config.pipeline.experiment_directory, **kwargs)
+        row_agg_features_valid = []
+        for bucket_nr, row_agg_feature in zip(bucket_nrs, row_agg_features):
+            row_agg_feature_valid = Step(name='row_agg_feature_bucket_nr{}_valid{}'.format(bucket_nr, suffix),
+                                         transformer=row_agg_feature,
+                                         input_data=['input'],
+                                         adapter=Adapter({'X': E('input', 'X_valid')}),
+                                         experiment_directory=config.pipeline.experiment_directory, **kwargs)
+            row_agg_features_valid.append(row_agg_feature_valid)
 
-        return row_agg_feature, row_agg_feature_valid
+        return row_agg_features, row_agg_features_valid
     else:
-        return row_agg_feature
+        return row_agg_features
 
 
 def feature_extraction(data_cleaned, row_aggregations, config, train_mode, suffix,
@@ -199,8 +201,8 @@ def feature_extraction(data_cleaned, row_aggregations, config, train_mode, suffi
 
         if row_aggregations:
             agg_features_train, agg_features_valid = row_aggregations
-            numerical_features.append(agg_features_train)
-            numerical_features_valid.append(agg_features_valid)
+            numerical_features.extend(agg_features_train)
+            numerical_features_valid.extend(agg_features_valid)
 
         feature_combiner, feature_combiner_valid = _join_features(numerical_features=numerical_features,
                                                                   numerical_features_valid=numerical_features_valid,
@@ -227,7 +229,7 @@ def feature_extraction(data_cleaned, row_aggregations, config, train_mode, suffi
             numerical_features.extend(projection_features)
 
         if row_aggregations:
-            numerical_features.append(row_aggregations)
+            numerical_features.extend(row_aggregations)
 
         feature_combiner = _join_features(numerical_features=numerical_features,
                                           numerical_features_valid=[],
@@ -309,8 +311,8 @@ def _projection(projection_config, data_cleaned, config, train_mode, suffix, **k
                      experiment_directory=config.pipeline.experiment_directory, **kwargs)
 
     projector_pandas = Step(name='{}_pandas{}'.format(transformer_name, suffix),
-                            transformer=make_transformer(partial(to_pandas, column_prefix=transformer_name)
-                                                         , output_name='numerical_features'),
+                            transformer=make_transformer(partial(to_pandas, column_prefix=transformer_name),
+                                                         output_name='numerical_features'),
                             input_steps=[projector],
                             adapter=Adapter({'x': E(projector.name, 'features')}),
                             experiment_directory=config.pipeline.experiment_directory, **kwargs)
@@ -319,8 +321,7 @@ def _projection(projection_config, data_cleaned, config, train_mode, suffix, **k
         projector_valid = Step(name='{}_valid{}'.format(transformer_name, suffix),
                                transformer=projector,
                                input_steps=[data_cleaned_valid],
-                               adapter=Adapter({'features': E(data_cleaned_valid.name, 'numerical_features')}
-                                               ),
+                               adapter=Adapter({'features': E(data_cleaned_valid.name, 'numerical_features')}),
                                experiment_directory=config.pipeline.experiment_directory, **kwargs)
         projector_pandas_valid = Step(name='{}_pandas_valid{}'.format(transformer_name, suffix),
                                       transformer=projector_pandas,
