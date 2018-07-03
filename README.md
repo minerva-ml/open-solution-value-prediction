@@ -6,16 +6,17 @@
 This is an open solution to the [Santander Value Prediction Challenge](https://www.kaggle.com/c/santander-value-prediction-challenge).
 
 ## The purpose of the Open Solution
+
 We are building entirely open solution to this competition. Specifically:
 1. Check **live preview of our work** on public projects page: [Santander Value Prediction Challenge](https://app.neptune.ml/neptune-ml/Santander-Value-Prediction-Challenge).
 1. Source code and [issues](https://github.com/minerva-ml/open-solution-value-prediction/issues) are publicly available.
 
-Rules are simple:
+### Our rules:
 1. Clean code and extensible solution leads to the reproducible experimentations and better control over the improvements.
 1. Open solution should establish solid benchmark and give good base for your custom ideas and experiments.
 
 ## Disclaimer
-In this open source solution you will find references to the neptune.ml. It is free platform for community Users, which we use daily to keep track of our experiments. Please note that using neptune.ml is not necessary to proceed with this solution. You may run it as plain Python script :wink:.
+In this open source solution you will find references to the [neptune.ml](https://neptune.ml). It is free platform for community Users, which we use daily to keep track of our experiments. Please note that using neptune.ml is not necessary to proceed with this solution. You may run it as plain Python script :wink:.
 
 ## Installation
 ### Fast Track
@@ -24,6 +25,12 @@ In this open source solution you will find references to the neptune.ml. It is f
 1. Run experiment:
 ```bash
 neptune run --config neptune_random_search.yaml main.py train_evaluate_predict --pipeline_name SOME_NAME
+```
+
+or
+    
+```bash
+python main.py train_evaluate_predict --pipeline_name SOME_NAME
 ```
 
 ### Step by step
