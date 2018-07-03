@@ -13,7 +13,7 @@ We are building entirely open solution to this competition. Specifically:
 1. We are opening our experiments as well: everybody can have **live preview** on our experiments, parameters, code, etc. Check: [Santander-Value-Prediction-Challenge](https://app.neptune.ml/neptune-ml/Santander-Value-Prediction-Challenge) :chart_with_upwards_trend:.
 
 ## Learn more about our solutions
-[Kaggle](https://www.kaggle.com/c/santander-value-prediction-challenge/discussion/59299) is our primary way of communication, however, we are also documenting our work on the [Wiki pages :green_book:](https://github.com/neptune-ml/open-solution-value-prediction/wiki) that belongs to this repository. Click on the penguin to get started [:penguin:](https://github.com/neptune-ml/open-solution-value-prediction/wiki).
+[Kaggle](https://www.kaggle.com/c/santander-value-prediction-challenge/discussion/59299) is our primary way of communication, however, we are also documenting our work on the [Wiki pages :green_book:](https://github.com/neptune-ml/open-solution-value-prediction/wiki) that belongs to this repository. Click on the tropical fish to get started [:tropical_fish:](https://github.com/neptune-ml/open-solution-value-prediction/wiki).
 
 ## Disclaimer
 In this open source solution you will find references to the [neptune.ml](https://neptune.ml). It is free platform for community Users, which we use daily to keep track of our experiments. Please note that using neptune.ml is not necessary to proceed with this solution. You may run it as plain Python script :wink:.
