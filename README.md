@@ -28,7 +28,7 @@ neptune run --config neptune_random_search.yaml main.py train_evaluate_predict -
 ```
 
 or
-    
+
 ```bash
 python main.py train_evaluate_predict --pipeline_name SOME_NAME
 ```
@@ -49,6 +49,13 @@ pip3 install requirements.txt
 neptune login
 neptune run --config neptune_random_search.yaml main.py train_evaluate_predict --pipeline_name SOME_NAME
 ```
+
+or
+    
+```bash
+python main.py train_evaluate_predict --pipeline_name SOME_NAME
+```
+
 6. collect submit from `experiment_directory` specified in the [neptune.yaml](https://github.com/minerva-ml/open-solution-value-prediction/blob/master/neptune.yaml)
 
 ## Get involved
