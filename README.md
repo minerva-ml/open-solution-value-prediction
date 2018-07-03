@@ -3,17 +3,17 @@
 [![Join the chat at https://gitter.im/minerva-ml/open-solution-value-prediction](https://badges.gitter.im/minerva-ml/open-solution-value-prediction.svg)](https://gitter.im/minerva-ml/open-solution-value-prediction?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg?maxAge=2592000)](https://github.com/minerva-ml/open-solution-value-prediction/blob/master/LICENSE)
 
-This is an open solution to the [Santander Value Prediction Challenge](https://www.kaggle.com/c/santander-value-prediction-challenge).
+This is an open solution to the [Santander Value Prediction Challenge](https://www.kaggle.com/c/santander-value-prediction-challenge) :smiley:
 
-## The purpose of the Open Solution
-
+## Our goals
 We are building entirely open solution to this competition. Specifically:
-1. Check **live preview of our work** on public projects page: [Santander Value Prediction Challenge](https://app.neptune.ml/neptune-ml/Santander-Value-Prediction-Challenge).
-1. Source code and [issues](https://github.com/minerva-ml/open-solution-value-prediction/issues) are publicly available.
+1. **Learning from the process** - updates about new ideas, code and experiments is the best way to learn data science. Our activity is especially useful for people who wants to enter the competition, but lack appropriate experience.
+1. Encourage more Kagglers to start working on this competition.
+1. Deliver open source solution with no strings attached. Code is available on our [GitHub repository](https://github.com/neptune-ml/open-solution-value-prediction) :computer:. This solution should establish solid benchmark, as well as provide good base for your custom ideas and experiments. We care about clean code :smiley:
+1. We are opening our experiments as well: everybody can have **live preview** on our experiments, parameters, code, etc. Check: [Santander-Value-Prediction-Challenge](https://app.neptune.ml/neptune-ml/Santander-Value-Prediction-Challenge) :chart_with_upwards_trend:.
 
-### Our rules:
-1. Clean code and extensible solution leads to the reproducible experimentations and better control over the improvements.
-1. Open solution should establish solid benchmark and give good base for your custom ideas and experiments.
+## Learn more about our solutions
+[Kaggle](https://www.kaggle.com/c/santander-value-prediction-challenge/discussion/59299) is our primary way of communication, however, we are also documenting our work on the [Wiki pages :green_book:](https://github.com/neptune-ml/open-solution-value-prediction/wiki) that belongs to this repository. Click on the penguin to get started [:penguin:](https://github.com/neptune-ml/open-solution-value-prediction/wiki).
 
 ## Disclaimer
 In this open source solution you will find references to the [neptune.ml](https://neptune.ml). It is free platform for community Users, which we use daily to keep track of our experiments. Please note that using neptune.ml is not necessary to proceed with this solution. You may run it as plain Python script :wink:.
@@ -23,12 +23,13 @@ In this open source solution you will find references to the [neptune.ml](https:
 1. Clone repository and install requirements (check _requirements.txt_)
 1. Register to the [neptune.ml](https://neptune.ml/login) _(if you wish to use it)_
 1. Run experiment:
+
+:trident:
 ```bash
 neptune run --config neptune_random_search.yaml main.py train_evaluate_predict --pipeline_name SOME_NAME
 ```
 
-or
-
+:snake:
 ```bash
 python main.py train_evaluate_predict --pipeline_name SOME_NAME
 ```
