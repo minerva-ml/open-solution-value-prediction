@@ -13,13 +13,13 @@ ctx = neptune.Context()
 
 
 class LightGBM(BaseTransformer):
-    def __init__(self, **params):
+    def __init__(self, name=None, **params):
         super().__init__()
         logger.info('initializing LightGBM...')
         self.params = params
         self.training_params = ['number_boosting_rounds', 'early_stopping_rounds']
         self.evaluation_function = None
-        self.callbacks = None
+        self.callbacks = callbacks(channel_prefix=name)
 
     @property
     def model_config(self):
@@ -91,7 +91,7 @@ class LightGBM(BaseTransformer):
     def _check_target_shape_and_type(self, target, name):
         if not any([isinstance(target, obj_type) for obj_type in [pd.Series, np.ndarray, list]]):
             raise TypeError(
-                '"{}" must be "numpy.ndarray" or "Pandas.Series" or "list", got {} instead.'.format(type(target)))
+                '"target" must be "numpy.ndarray" or "Pandas.Series" or "list", got {} instead.'.format(type(target)))
         try:
             assert len(target.shape) == 1, '"{}" must be 1-D. It is {}-D instead.'.format(name,
                                                                                           len(target.shape))
@@ -110,11 +110,11 @@ class LightGBM(BaseTransformer):
             return np.array(target)
         else:
             raise TypeError(
-                '"{}" must be "numpy.ndarray" or "Pandas.Series" or "list", got {} instead.'.format(type(target)))
+                '"target" must be "numpy.ndarray" or "Pandas.Series" or "list", got {} instead.'.format(type(target)))
 
 
-def callbacks(callback_config):
-    neptune_monitor = neptune_monitor_lgbm(**callback_config['neptune_monitor'])
+def callbacks(channel_prefix):
+    neptune_monitor = neptune_monitor_lgbm(channel_prefix)
     return [neptune_monitor]
 
 

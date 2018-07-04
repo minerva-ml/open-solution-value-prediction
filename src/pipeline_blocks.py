@@ -13,6 +13,8 @@ from .models import LightGBM
 
 
 def classifier_light_gbm(features, config, train_mode, suffix='', **kwargs):
+    model_name = 'light_gbm{}'.format(suffix)
+
     if train_mode:
         features_train, features_valid = features
         log_target = Step(name='log_target{}'.format(suffix),
@@ -42,9 +44,9 @@ def classifier_light_gbm(features, config, train_mode, suffix='', **kwargs):
                                                         **config.random_search.light_gbm.callbacks.persist_results)]
                                                 )
         else:
-            transformer = LightGBM(**config.light_gbm)
+            transformer = LightGBM(name=model_name, **config.light_gbm),
 
-        light_gbm = Step(name='light_gbm{}'.format(suffix),
+        light_gbm = Step(name=model_name,
                          transformer=transformer,
                          input_data=['input'],
                          input_steps=[features_train, features_valid, log_target, log_target_valid],
@@ -57,8 +59,8 @@ def classifier_light_gbm(features, config, train_mode, suffix='', **kwargs):
                                           }),
                          experiment_directory=config.pipeline.experiment_directory, **kwargs)
     else:
-        light_gbm = Step(name='light_gbm{}'.format(suffix),
-                         transformer=LightGBM(**config.light_gbm),
+        light_gbm = Step(name=model_name,
+                         transformer=LightGBM(name=model_name, **config.light_gbm),
                          input_steps=[features],
                          adapter=Adapter({'X': E(features.name, 'features')}),
                          experiment_directory=config.pipeline.experiment_directory, **kwargs)
