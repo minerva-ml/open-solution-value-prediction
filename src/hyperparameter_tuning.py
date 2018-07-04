@@ -1,12 +1,11 @@
 import gc
 
 import numpy as np
-from deepsense import neptune
 from sklearn.externals import joblib
 from steppy.base import BaseTransformer
 from steppy.utils import get_logger
 
-from .utils import set_seed
+from .utils import set_seed, NeptuneContext
 
 logger = get_logger()
 
@@ -132,14 +131,14 @@ class GridSearchCallback:
 class NeptuneMonitor(GridSearchCallback):
     def __init__(self, name):
         self.name = name
-        self.ctx = neptune.Context()
+        self.neptune_ctx = NeptuneContext()
         self.highest_params_channel = self._create_text_channel(name='highest params')
         self.lowest_params_channel = self._create_text_channel(name='lowest params')
         self.run_params_channel = self._create_text_channel(name='run params')
         self.run_id = 0
 
     def on_run_end(self, score, params):
-        self.ctx.channel_send('score on run', x=self.run_id, y=score)
+        self.neptune_ctx.ctx.channel_send('score on run', x=self.run_id, y=score)
         self.run_params_channel.send(y=params)
         self.run_id += 1
 
@@ -148,14 +147,14 @@ class NeptuneMonitor(GridSearchCallback):
         highest_score, highest_param_set = results_sorted[-1]
         lowest_score, lowest_param_set = results_sorted[0]
 
-        self.ctx.channel_send('highest score', x=0, y=highest_score)
-        self.ctx.channel_send('lowest score', x=0, y=lowest_score)
+        self.neptune_ctx.ctx.channel_send('highest score', x=0, y=highest_score)
+        self.neptune_ctx.ctx.channel_send('lowest score', x=0, y=lowest_score)
 
         self.highest_params_channel.send(y=highest_param_set)
         self.lowest_params_channel.send(y=lowest_param_set)
 
     def _create_text_channel(self, name=''):
-        return self.ctx.create_channel(name=name, channel_type=neptune.ChannelType.TEXT)
+        return self.neptune_ctx.ctx.create_channel(name=name, channel_type=self.neptune_ctx.text_channel)
 
 
 class PersistResults(GridSearchCallback):

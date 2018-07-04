@@ -7,9 +7,50 @@ import numpy as np
 import pandas as pd
 import yaml
 from attrdict import AttrDict
+from deepsense import neptune
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import BaseCrossValidator
 from steppy.base import BaseTransformer
+
+
+# Alex Martelli's 'Borg'
+# http://python-3-patterns-idioms-test.readthedocs.io/en/latest/Singleton.html
+class _Borg:
+    _shared_state = {}
+
+    def __init__(self):
+        self.__dict__ = self._shared_state
+
+
+class NeptuneContext(_Borg):
+    def __init__(self, fallback_file='neptune_local.yaml'):
+        _Borg.__init__(self)
+
+        self.ctx = neptune.Context()
+        self.fallback_file = fallback_file
+        self.params = self._read_params()
+        self.numeric_channel = neptune.ChannelType.NUMERIC
+        self.image_channel = neptune.ChannelType.IMAGE
+        self.text_channel = neptune.ChannelType.TEXT
+
+    def _read_params(self):
+        if self.ctx.params.__class__.__name__ == 'OfflineContextParams':
+            params = self._read_yaml().parameters
+        else:
+            params = self.ctx.params
+        return params
+
+    def _read_yaml(self):
+        with open(self.fallback_file) as f:
+            config = yaml.load(f)
+        return AttrDict(config)
+
+
+def parameter_eval(param):
+    try:
+        return eval(param)
+    except Exception:
+        return param
 
 
 def create_submission(meta, predictions):
@@ -50,28 +91,6 @@ def init_logger():
     return logger
 
 
-def read_params(ctx, fallback_file):
-    if ctx.params.__class__.__name__ == 'OfflineContextParams':
-        neptune_config = read_yaml(fallback_file)
-        params = neptune_config.parameters
-    else:
-        params = ctx.params
-    return params
-
-
-def read_yaml(filepath):
-    with open(filepath) as f:
-        config = yaml.load(f)
-    return AttrDict(config)
-
-
-def parameter_eval(param):
-    try:
-        return eval(param)
-    except Exception:
-        return param
-
-
 def persist_evaluation_predictions(experiment_directory, y_pred, raw_data, id_column, target_column):
     raw_data.loc[:, 'y_pred'] = y_pred.reshape(-1)
     predictions_df = raw_data.loc[:, [id_column, target_column, 'y_pred']]
@@ -103,7 +122,7 @@ def root_mean_squared_error(y_true, y_pred):
     return np.sqrt(mean_squared_error(y_true, y_pred))
 
 
-def log_root_mean_squared_error(y_true, y_pred):
+def root_mean_squared_log_error(y_true, y_pred):
     return np.sqrt(mean_squared_error(np.log(1 + y_true), np.log(1 + y_pred)))
 
 

@@ -1,12 +1,11 @@
 import os
 
 from attrdict import AttrDict
-from deepsense import neptune
 
-from .utils import read_params, parameter_eval
+from .utils import NeptuneContext, parameter_eval
 
-ctx = neptune.Context()
-params = read_params(ctx, fallback_file='neptune.yaml')
+neptune_ctx = NeptuneContext()
+params = neptune_ctx.params
 
 RANDOM_SEED = 90210
 DEV_SAMPLE_SIZE = 500

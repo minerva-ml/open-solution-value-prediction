@@ -2,14 +2,13 @@ import lightgbm as lgb
 import numpy as np
 import pandas as pd
 from attrdict import AttrDict
-from deepsense import neptune
 from sklearn.externals import joblib
 from steppy.base import BaseTransformer
 
-from .utils import get_logger
+from .utils import NeptuneContext, get_logger
 
+neptune_ctx = NeptuneContext()
 logger = get_logger()
-ctx = neptune.Context()
 
 
 class LightGBM(BaseTransformer):
@@ -130,6 +129,5 @@ def neptune_monitor_lgbm(channel_prefix=''):
                 channel_name = '{}_{}_{}'.format(channel_prefix, name, loss_name)
             else:
                 channel_name = '{}_{}'.format(name, loss_name)
-            ctx.channel_send(channel_name, x=env.iteration, y=loss_value)
-
+            neptune_ctx.ctx.channel_send(channel_name, x=env.iteration, y=loss_value)
     return callback
