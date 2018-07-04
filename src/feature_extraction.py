@@ -84,9 +84,28 @@ class SparseRandomProjection(BaseDecomposition):
 
 
 class RowAggregationFeatures(BaseTransformer):
+    def __init__(self, bucket_nr, **kwargs):
+        super().__init__()
+        self.bucket_nr = bucket_nr
+
     def transform(self, X, **kwargs):
-        X_agg = X.apply(aggregate_row, axis=1)
-        return {'numerical_features': X_agg}
+        X_aggs = []
+        for i, column_bucket in enumerate(self._column_bucket_gen(X.columns)):
+            X_bucket_agg = X[column_bucket].apply(aggregate_row, axis=1)
+            X_bucket_agg.columns = self._add_prefix(X_bucket_agg.columns, i)
+            X_aggs.append(X_bucket_agg)
+        X_aggs = pd.concat(X_aggs, axis=1)
+        return {'numerical_features': X_aggs}
+
+    def _column_bucket_gen(self, cols):
+        chunk_size = len(cols) // self.bucket_nr + 1
+        for i in range(0, len(cols), chunk_size):
+            yield cols[i:i + chunk_size]
+
+    def _add_prefix(self, columns, bucket_id):
+        columns = ['{}_of_{}_{}'.format(self.bucket_nr, bucket_id, col)
+                   for col in columns]
+        return columns
 
 
 def aggregate_row(row):
@@ -141,15 +160,17 @@ def aggregate_row(row):
                         'non_zero_fraction': non_zero_values.count() / row.count()
                         }
         for q in deciles:
-            aggregations['non_zero_centile{}'.format(q)] = np.percentile(non_zero_values, q=q)
-            aggregations['non_zero_median_diff_centile{}'.format(q)] = aggregations['non_zero_median'] - aggregations[
-                'non_zero_centile{}'.format(q)]
-            aggregations['non_zero_log_centile{}'.format(q)] = np.percentile(np.log1p(non_zero_values), q=q)
-            aggregations['non_zero_log_median_diff_centile{}'.format(q)] = aggregations['non_zero_log_median'] - \
+            aggregations['non_zero_percentile_{}'.format(q)] = np.percentile(non_zero_values, q=q)
+            aggregations['non_zero_median_diff_percentile_{}'.format(q)] = aggregations['non_zero_median'] - \
                                                                            aggregations[
-                                                                               'non_zero_log_centile}'.format(q)]
-        aggregations['non_zero_q3_q1_diff'] = aggregations['non_zero_centile70'] - aggregations['non_zero_centile30']
-        aggregations['non_zero_log_q3_q1_diff'] = aggregations['non_zero_log_centile70'] - aggregations[
-            'non_zero_log_centile30']
+                                                                               'non_zero_percentile_{}'.format(q)]
+            aggregations['non_zero_log_percentile_{}'.format(q)] = np.percentile(np.log1p(non_zero_values), q=q)
+            aggregations['non_zero_log_median_diff_percentile_{}'.format(q)] = aggregations['non_zero_log_median'] - \
+                                                                               aggregations[
+                                                                                   'non_zero_log_centile}'.format(q)]
+        aggregations['non_zero_q3_q1_diff'] = aggregations['non_zero_percentile_70'] - aggregations[
+            'non_zero_percentile_30']
+        aggregations['non_zero_log_q3_q1_diff'] = aggregations['non_zero_log_percentile_70'] - aggregations[
+            'non_zero_log_percentile_30']
 
     return pd.Series(aggregations)
