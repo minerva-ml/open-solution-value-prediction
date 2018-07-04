@@ -115,11 +115,12 @@ def aggregate_row(row):
                         'non_zero_fraction': np.nan
                         }
         for q in percentiles:
-            aggregations['non_zero_q{}'.format(q)] = np.nan
-            aggregations['non_zero_median_diff_q{}'.format(q)] = np.nan
-            aggregations['non_zero_log_q{}'.format(q)] = np.nan
-            aggregations['non_zero_log_median_diff_q{}'.format(q)] = np.nan
-
+            aggregations['non_zero_centile{}'.format(q)] = np.nan
+            aggregations['non_zero_median_diff_centile{}'.format(q)] = np.nan
+            aggregations['non_zero_log_centile{}'.format(q)] = np.nan
+            aggregations['non_zero_log_median_diff_centile{}'.format(q)] = np.nan
+        aggregations['non_zero_q3_q1_diff'] = np.nan
+        aggregations['non_zero_log_q3_q1_diff'] = np.nan
     else:
         aggregations = {'non_zero_mean': non_zero_values.mean(),
                         'non_zero_std': non_zero_values.std(),
@@ -141,11 +142,15 @@ def aggregate_row(row):
                         'non_zero_fraction': non_zero_values.count() / row.count()
                         }
         for q in percentiles:
-            aggregations['non_zero_q{}'.format(q)] = np.percentile(non_zero_values, q=q)
-            aggregations['non_zero_median_diff_q{}'.format(q)] = aggregations['non_zero_median'] - aggregations[
-                'non_zero_q{}'.format(q)]
-            aggregations['non_zero_log_q{}'.format(q)] = np.percentile(np.log1p(non_zero_values), q=q)
-            aggregations['non_zero_log_median_diff_q{}'.format(q)] = aggregations['non_zero_log_median'] - aggregations[
-                'non_zero_log_q{}'.format(q)]
+            aggregations['non_zero_centile{}'.format(q)] = np.percentile(non_zero_values, q=q)
+            aggregations['non_zero_median_diff_centile{}'.format(q)] = aggregations['non_zero_median'] - aggregations[
+                'non_zero_centile{}'.format(q)]
+            aggregations['non_zero_log_centile{}'.format(q)] = np.percentile(np.log1p(non_zero_values), q=q)
+            aggregations['non_zero_log_median_diff_centile{}'.format(q)] = aggregations['non_zero_log_median'] - \
+                                                                           aggregations[
+                                                                               'non_zero_log_centile}'.format(q)]
+        aggregations['non_zero_q3_q1_diff'] = aggregations['non_zero_centile75'] - aggregations['non_zero_centile25']
+        aggregations['non_zero_log_q3_q1_diff'] = aggregations['non_zero_log_centile75'] - aggregations[
+            'non_zero_log_centile25']
 
     return pd.Series(aggregations)
