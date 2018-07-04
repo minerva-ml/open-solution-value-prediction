@@ -9,7 +9,7 @@ ctx = neptune.Context()
 params = read_params(ctx, fallback_file='neptune.yaml')
 
 RANDOM_SEED = 90210
-DEV_SAMPLE_SIZE = 500
+DEV_SAMPLE_SIZE = 100
 
 ID_COLUMN = ['ID']
 TARGET_COLUMN = ['target']
