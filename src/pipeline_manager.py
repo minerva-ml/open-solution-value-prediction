@@ -3,8 +3,8 @@ import shutil
 
 import numpy as np
 import pandas as pd
-from scipy.stats import gmean
 from deepsense import neptune
+from scipy.stats import gmean
 from sklearn.model_selection import train_test_split
 
 from . import pipeline_config as cfg
