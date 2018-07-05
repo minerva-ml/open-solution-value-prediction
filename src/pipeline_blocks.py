@@ -2,7 +2,7 @@ from functools import partial
 
 import numpy as np
 from steppy.adapter import Adapter, E
-from steppy.base import Step
+from steppy.base import Step, IdentityOperation
 from toolkit.preprocessing.misc import TruncatedSVD
 
 from . import data_cleaning as dc
@@ -239,6 +239,38 @@ def feature_extraction(data_cleaned, row_aggregations, config, train_mode, suffi
                                           train_mode=train_mode,
                                           suffix=suffix, **kwargs)
 
+        return feature_combiner
+
+
+def stacking_features(config, train_mode, suffix, **kwargs):
+    features = Step(name='stacking_features{}'.format(suffix),
+                    transformer=IdentityOperation(),
+                    input_data=['input'],
+                    adapter=Adapter({'numerical_features': E('input', 'X')}),
+                    experiment_directory=config.pipeline.experiment_directory, **kwargs)
+
+    if train_mode:
+        features_valid = Step(name='stacking_features_valid{}'.format(suffix),
+                              transformer=IdentityOperation(),
+                              input_data=['input'],
+                              adapter=Adapter({'numerical_features': E('input', 'X_valid')}),
+                              experiment_directory=config.pipeline.experiment_directory, **kwargs)
+        feature_combiner, feature_combiner_valid = _join_features(numerical_features=[features],
+                                                                  numerical_features_valid=[features_valid],
+                                                                  categorical_features=[],
+                                                                  categorical_features_valid=[],
+                                                                  config=config,
+                                                                  train_mode=train_mode,
+                                                                  suffix=suffix, **kwargs)
+        return feature_combiner, feature_combiner_valid
+    else:
+        feature_combiner = _join_features(numerical_features=[features],
+                                          numerical_features_valid=[],
+                                          categorical_features=[],
+                                          categorical_features_valid=[],
+                                          config=config,
+                                          train_mode=train_mode,
+                                          suffix=suffix, **kwargs)
         return feature_combiner
 
 
