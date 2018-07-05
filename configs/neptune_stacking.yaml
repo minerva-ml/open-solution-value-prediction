@@ -1,11 +1,11 @@
 project: ORGANIZATION/Santander-Value-Prediction-Challenge
 
 name: Santander-Value-Prediction-Challenge
-tags: [solution-3]
+tags: [solution-6]
 
 metric:
   channel: 'RMSLE'
-  goal: minimize
+  goal: maximize
 
 exclude:
   - output
@@ -23,11 +23,12 @@ parameters:
   train_filepath:             YOUR/PATH/TO/train.csv
   test_filepath:              YOUR/PATH/TO/test.csv
   sample_submission_filepath: YOUR/PATH/TO/sample_submission.csv
+  first_level_oof_predictions_dir: YOUR/PATH/WORKDIR
   experiment_directory:       YOUR/PATH/WORKDIR
 
 # Kaggle
   kaggle_api: 0
-  kaggle_message: 'solution-3'
+  kaggle_message: 'solution-6'
 
 # Data preparation
   n_cv_splits: 5
@@ -66,18 +67,19 @@ parameters:
   lgbm__boosting_type: gbdt
   lgbm__objective: rmse
   lgbm__metric: rmse
-  lgbm__number_boosting_rounds: 10000
-  lgbm__early_stopping_rounds: 1000
-  lgbm__learning_rate: 0.001
-  lgbm__num_leaves: 16
-  lgbm__max_depth: -1
-  lgbm__min_child_samples: 1
+  lgbm__number_boosting_rounds: 500
+  lgbm__early_stopping_rounds: 50
+  lgbm__learning_rate: 0.1
+  lgbm__num_leaves: 25
+  lgbm__max_depth: 3
+  lgbm__min_child_samples: 100
   lgbm__max_bin: 300
   lgbm__subsample: 1.0
   lgbm__subsample_freq: 1
-  lgbm__colsample_bytree: 0.1
-  lgbm__min_child_weight: 10
-  lgbm__reg_lambda: 0.1
+  lgbm__colsample_bytree: 1.0
+  lgbm__min_child_weight: 1
+  lgbm__min_split_gain: 0.0
+  lgbm__reg_lambda: 10.0
   lgbm__reg_alpha: 0.0
   lgbm__scale_pos_weight: 1
   lgbm__zero_as_missing: False

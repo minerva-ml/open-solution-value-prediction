@@ -5,7 +5,7 @@ tags: [solution-3]
 
 metric:
   channel: 'RMSLE'
-  goal: minimize
+  goal: maximize
 
 exclude:
   - output
@@ -23,6 +23,7 @@ parameters:
   train_filepath:             YOUR/PATH/TO/train.csv
   test_filepath:              YOUR/PATH/TO/test.csv
   sample_submission_filepath: YOUR/PATH/TO/sample_submission.csv
+  first_level_oof_predictions_dir: YOUR/PATH/WORKDIR
   experiment_directory:       YOUR/PATH/WORKDIR
 
 # Kaggle
@@ -72,6 +73,7 @@ parameters:
   lgbm__num_leaves: '[10, 50]'
   lgbm__max_depth: '[1, 20]'
   lgbm__min_child_samples: '[1, 20]'
+  lgbm__min_split_gain: 0.0
   lgbm__max_bin: '[180, 500]' # at most 255 for device=gpu
   lgbm__subsample: '[0.8, 0.9, 0.99, 0.6, 0.7, "list"]'
   lgbm__subsample_freq: 1

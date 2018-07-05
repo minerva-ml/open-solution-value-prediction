@@ -45,6 +45,28 @@ def lightGBM(config, train_mode, suffix='',
     return light_gbm
 
 
+def lightGBM_stacking(config, train_mode, suffix=''):
+    if train_mode:
+        cache_output = False
+        persist_output = False
+        load_persisted_output = False
+    else:
+        cache_output = False
+        persist_output = False
+        load_persisted_output = False
+
+    features = blocks.stacking_features(config, train_mode, suffix,
+                                        persist_output=persist_output,
+                                        cache_output=cache_output,
+                                        load_persisted_output=load_persisted_output)
+
+    light_gbm = blocks.classifier_light_gbm(features, config, train_mode, suffix,
+                                            persist_output=persist_output,
+                                            cache_output=cache_output,
+                                            load_persisted_output=load_persisted_output)
+    return light_gbm
+
+
 PIPELINES = {'lightGBM_raw': lightGBM,
              'lightGBM_is_missing': partial(lightGBM,
                                             use_raw=False,
@@ -75,6 +97,7 @@ PIPELINES = {'lightGBM_raw': lightGBM,
                                                   use_raw=True,
                                                   use_is_missing=False,
                                                   use_projections=False,
-                                                  use_row_aggregations=True)
+                                                  use_row_aggregations=True),
+             'lightGBM_stacking': lightGBM_stacking
 
              }
