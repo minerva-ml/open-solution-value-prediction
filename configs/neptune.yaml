@@ -5,7 +5,7 @@ tags: [solution-3]
 
 metric:
   channel: 'RMSLE'
-  goal: minimize
+  goal: maximize
 
 exclude:
   - output
@@ -73,6 +73,7 @@ parameters:
   lgbm__num_leaves: 16
   lgbm__max_depth: -1
   lgbm__min_child_samples: 1
+  lgbm__min_split_gain: 0.0
   lgbm__max_bin: 300
   lgbm__subsample: 1.0
   lgbm__subsample_freq: 1
