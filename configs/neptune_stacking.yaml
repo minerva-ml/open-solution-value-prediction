@@ -1,7 +1,7 @@
 project: ORGANIZATION/Santander-Value-Prediction-Challenge
 
 name: Santander-Value-Prediction-Challenge
-tags: [solution-3]
+tags: [solution-6]
 
 metric:
   channel: 'RMSLE'
@@ -28,7 +28,7 @@ parameters:
 
 # Kaggle
   kaggle_api: 0
-  kaggle_message: 'solution-3'
+  kaggle_message: 'solution-6'
 
 # Data preparation
   n_cv_splits: 5
@@ -69,10 +69,10 @@ parameters:
   lgbm__metric: rmse
   lgbm__number_boosting_rounds: 500
   lgbm__early_stopping_rounds: 50
-  lgbm__learning_rate: 0.02
-  lgbm__num_leaves: 5
-  lgbm__max_depth: -1
-  lgbm__min_child_samples: 1
+  lgbm__learning_rate: 0.1
+  lgbm__num_leaves: 25
+  lgbm__max_depth: 3
+  lgbm__min_child_samples: 100
   lgbm__max_bin: 300
   lgbm__subsample: 1.0
   lgbm__subsample_freq: 1
