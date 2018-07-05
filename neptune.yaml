@@ -44,7 +44,7 @@ parameters:
   variance_threshold__threshold: 0.0
 
 # Feature Extraction
-  row_aggregations__bucket_nrs: "[1, 2]"
+  row_aggregations__bucket_nrs: "[1]"
   truncated_svd__use: False
   truncated_svd__n_components: 50
   truncated_svd__n_iter: 10

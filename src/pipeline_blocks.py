@@ -247,6 +247,15 @@ def _join_features(numerical_features,
                    categorical_features,
                    categorical_features_valid,
                    config, train_mode, suffix, **kwargs):
+    if train_mode:
+        cache_output = False
+        persist_output = True
+        load_persisted_output = False
+    else:
+        cache_output = False
+        persist_output = False
+        load_persisted_output = False
+
     feature_joiner = Step(name='feature_joiner{}'.format(suffix),
                           transformer=fe.FeatureJoiner(),
                           input_steps=numerical_features + categorical_features,
@@ -257,7 +266,9 @@ def _join_features(numerical_features,
                                   E(feature.name, 'categorical_features') for feature in categorical_features],
                           }),
                           experiment_directory=config.pipeline.experiment_directory,
-                          **kwargs)
+                          cache_output=cache_output,
+                          persist_output=persist_output,
+                          load_persisted_output=load_persisted_output)
 
     if train_mode:
         feature_joiner_valid = Step(name='feature_joiner_valid{}'.format(suffix),
@@ -272,7 +283,9 @@ def _join_features(numerical_features,
                                               'categorical_features') for feature in categorical_features_valid],
                                     }),
                                     experiment_directory=config.pipeline.experiment_directory,
-                                    **kwargs)
+                                    cache_output=cache_output,
+                                    persist_output=persist_output,
+                                    load_persisted_output=load_persisted_output)
 
         return feature_joiner, feature_joiner_valid
 
