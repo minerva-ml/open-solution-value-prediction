@@ -56,12 +56,14 @@ def classifier_light_gbm(features, config, train_mode, suffix='', **kwargs):
                                           'X_valid': E(features_valid.name, 'features'),
                                           'y_valid': E(log_target_valid.name, 'y'),
                                           }),
+                         force_fitting=True,
                          experiment_directory=config.pipeline.experiment_directory, **kwargs)
     else:
         light_gbm = Step(name=model_name,
                          transformer=LightGBM(name=model_name, **config.light_gbm),
                          input_steps=[features],
                          adapter=Adapter({'X': E(features.name, 'features')}),
+                         force_fitting=True,
                          experiment_directory=config.pipeline.experiment_directory, **kwargs)
 
     output = exp_target(light_gbm, config, suffix, **kwargs)
@@ -149,23 +151,36 @@ def data_cleaning_v2(config, train_mode, suffix, **kwargs):
 
 
 def row_aggregation_features(config, train_mode, suffix, **kwargs):
+    column_sort = Step(name='column_sort{}'.format(suffix),
+                       transformer=dc.ColumnSort(),
+                       input_data=['input'],
+                       adapter=Adapter({'X': E('input', 'X'),
+                                        'y': E('input', 'y')}),
+                       experiment_directory=config.pipeline.experiment_directory, **kwargs)
+
     bucket_nrs = config.row_aggregations.bucket_nrs
     row_agg_features = []
     for bucket_nr in bucket_nrs:
         row_agg_feature = Step(name='row_agg_feature_bucket_nr{}{}'.format(bucket_nr, suffix),
                                transformer=fe.RowAggregationFeatures(bucket_nr=bucket_nr),
-                               input_data=['input'],
-                               adapter=Adapter({'X': E('input', 'X')}),
+                               input_steps=[column_sort],
+                               adapter=Adapter({'X': E(column_sort.name, 'X')}),
                                experiment_directory=config.pipeline.experiment_directory, **kwargs)
         row_agg_features.append(row_agg_feature)
 
     if train_mode:
+        column_sort_valid = Step(name='column_sort_valid{}'.format(suffix),
+                                 transformer=column_sort,
+                                 input_data=['input'],
+                                 adapter=Adapter({'X': E('input', 'X_valid')}),
+                                 experiment_directory=config.pipeline.experiment_directory, **kwargs)
+
         row_agg_features_valid = []
         for bucket_nr, row_agg_feature in zip(bucket_nrs, row_agg_features):
             row_agg_feature_valid = Step(name='row_agg_feature_bucket_nr{}_valid{}'.format(bucket_nr, suffix),
                                          transformer=row_agg_feature,
-                                         input_data=['input'],
-                                         adapter=Adapter({'X': E('input', 'X_valid')}),
+                                         input_steps=[column_sort_valid],
+                                         adapter=Adapter({'X': E(column_sort_valid.name, 'X')}),
                                          experiment_directory=config.pipeline.experiment_directory, **kwargs)
             row_agg_features_valid.append(row_agg_feature_valid)
 
@@ -282,7 +297,7 @@ def _join_features(numerical_features,
     if train_mode:
         cache_output = False
         persist_output = True
-        load_persisted_output = False
+        load_persisted_output = True
     else:
         cache_output = False
         persist_output = False

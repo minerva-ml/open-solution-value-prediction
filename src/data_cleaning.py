@@ -85,3 +85,28 @@ class DummiesMissing(BaseTransformer):
         X_is_missing = pd.DataFrame(missing_mask.astype(int), columns=missing_columns)
 
         return {'categorical_features': X_is_missing}
+
+
+class ColumnSort(BaseTransformer):
+    def __init__(self):
+        self.sorted_columns = None
+
+    def fit(self, X, y, **kwargs):
+        col_correlations = []
+        for col in X.columns:
+            correlation = np.corrcoef(y, X[col])[0, 1]
+            if str(correlation) == 'nan':
+                correlation = 0
+            col_correlations.append((col, correlation))
+        col_correlations = sorted(col_correlations, key=lambda x: abs(x[1]), reverse=True)
+        self.sorted_columns = [name for name, val in col_correlations]
+        return self
+
+    def transform(self, X, **kwargs):
+        return {'X': X[self.sorted_columns]}
+
+    def load(self, filepath):
+        self.sorted_columns = joblib.load(filepath)
+
+    def persist(self, filepath):
+        joblib.dump(self.sorted_columns, filepath)
