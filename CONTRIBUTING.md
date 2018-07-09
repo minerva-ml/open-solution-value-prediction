@@ -16,6 +16,6 @@ In case of custom ideas, please contact core contributors directly at ml-team@ne
 
 Thanks!
 
-Jakub & Kamil,
+Kuba & Kamil,
 
-*core contributors to the [minerva.ml](https://minerva.ml)*
+*core contributors to the Open Solution*
