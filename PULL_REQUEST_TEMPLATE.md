@@ -8,6 +8,6 @@ Each pull request should be provided with minimal description about its contents
 
 Thanks!
 
-Jakub & Kamil,
+Kuba & Kamil,
 
-_core contributors to the minerva.ml_
+_core contributors to the Open Solutions_
