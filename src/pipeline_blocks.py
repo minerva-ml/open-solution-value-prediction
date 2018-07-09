@@ -63,7 +63,6 @@ def classifier_light_gbm(features, config, train_mode, suffix='', **kwargs):
                          transformer=LightGBM(name=model_name, **config.light_gbm),
                          input_steps=[features],
                          adapter=Adapter({'X': E(features.name, 'features')}),
-                         force_fitting=True,
                          experiment_directory=config.pipeline.experiment_directory, **kwargs)
 
     output = exp_target(light_gbm, config, suffix, **kwargs)

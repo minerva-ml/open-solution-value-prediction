@@ -74,7 +74,6 @@ SOLUTION_CONFIG = AttrDict({
                   'max_depth': parameter_eval(params.lgbm__max_depth),
                   'subsample': parameter_eval(params.lgbm__subsample),
                   'colsample_bytree': parameter_eval(params.lgbm__colsample_bytree),
-                  'min_child_weight': parameter_eval(params.lgbm__min_child_weight),
                   'reg_lambda': parameter_eval(params.lgbm__reg_lambda),
                   'reg_alpha': parameter_eval(params.lgbm__reg_alpha),
                   'subsample_freq': parameter_eval(params.lgbm__subsample_freq),
