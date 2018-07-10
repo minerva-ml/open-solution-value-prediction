@@ -12,14 +12,27 @@ We are building entirely open solution to this competition. Specifically:
 1. Deliver open source solution with no strings attached. Code is available on our [GitHub repository](https://github.com/neptune-ml/open-solution-value-prediction) :computer:. This solution should establish solid benchmark, as well as provide good base for your custom ideas and experiments. We care about clean code :smiley:
 1. We are opening our experiments as well: everybody can have **live preview** on our experiments, parameters, code, etc. Check: [Santander-Value-Prediction-Challenge](https://app.neptune.ml/neptune-ml/Santander-Value-Prediction-Challenge) :chart_with_upwards_trend:.
 
-## Learn more about our solutions
-[Kaggle](https://www.kaggle.com/c/santander-value-prediction-challenge/discussion/59299) is our primary way of communication, however, we are also documenting our work on the [Wiki pages :green_book:](https://github.com/neptune-ml/open-solution-value-prediction/wiki). Click on the tropical fish to get started [:tropical_fish:](https://github.com/neptune-ml/open-solution-value-prediction/wiki), or check our best solution: [the blowfish :blowfish:](https://github.com/neptune-ml/open-solution-value-prediction/wiki/bucketing-row-aggregations).
-
 ## Disclaimer
 In this open source solution you will find references to the [neptune.ml](https://neptune.ml). It is free platform for community Users, which we use daily to keep track of our experiments. Please note that using neptune.ml is not necessary to proceed with this solution. You may run it as plain Python script :wink:.
 
-## Installation
-### Fast Track
+# How to start?
+## Learn more about our solutions
+1. Check [Kaggle discussion](https://www.kaggle.com/c/santander-value-prediction-challenge/discussion/59299) for most recent updates and comments.
+1. Read [Wiki pages](https://github.com/neptune-ml/open-solution-value-prediction/wiki), where we describe solutions in more detail. Click on the tropical fish to get started [:tropical_fish:](https://github.com/neptune-ml/open-solution-value-prediction/wiki) or pick solution from the table below.
+
+|link to code|name|CV|LB|link to the description|
+|:---|:---|:---|:---|:---|
+|[solution 1](https://github.com/neptune-ml/open-solution-value-prediction/tree/solution-1)|*honey bee* :honeybee:|1.39|1.43|[LightGBM and 5fold CV](LightGBM-and-5fold-CV)|
+|[solution 2](https://github.com/neptune-ml/open-solution-value-prediction/tree/solution-2)|*beetle* :beetle:|1.60|1.77|[LightGBM on binarized dataset](LightGBM-on-binarized-dataset)|
+|[solution 3](https://github.com/neptune-ml/open-solution-value-prediction/tree/solution-3)|*dromedary camel* :dromedary_camel:|1.35|1.41|[LightGBM with row aggregations](LightGBM-with-row-aggregations)|
+|[solution 4](https://github.com/neptune-ml/open-solution-value-prediction/tree/solution-6)|*whale* :whale:|1.3416|1.41|[LightGBM on dimension reduced dataset](LightGBM-on-dimension-reduced-dataset)|
+|[solution 5](https://github.com/neptune-ml/open-solution-value-prediction/tree/solution-6)|*water buffalo* :water_buffalo:|1.336|1.39|[Exploring various dimension reduction techniques](Exploring-various-dimension-reduction-techniques)|
+|[solution 6](https://github.com/neptune-ml/open-solution-value-prediction/tree/solution-6)|*blowfish* :blowfish:|1.333|1.38|[bucketing row aggregations](bucketing-row-aggregations)|
+
+## Start experimenting with ready-to-use code
+You can jump start your participation in the competition by using our starter pack. Installation instruction below will guide you through the setup.
+
+### Installation _(fast track)_
 1. Clone repository and install requirements (check _requirements.txt_)
 1. Register to the [neptune.ml](https://neptune.ml/login) _(if you wish to use it)_
 1. Run experiment:
@@ -34,7 +47,7 @@ neptune run --config neptune_random_search.yaml main.py train_evaluate_predict -
 python main.py -- train_evaluate_predict --pipeline_name SOME_NAME
 ```
 
-### Step by step
+### Installation _(step by step)_
 1. Clone this repository
 ```bash
 git clone https://github.com/minerva-ml/open-solution-value-prediction.git
