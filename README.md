@@ -10,7 +10,11 @@ We are building entirely open solution to this competition. Specifically:
 1. **Learning from the process** - updates about new ideas, code and experiments is the best way to learn data science. Our activity is especially useful for people who wants to enter the competition, but lack appropriate experience.
 1. Encourage more Kagglers to start working on this competition.
 1. Deliver open source solution with no strings attached. Code is available on our [GitHub repository](https://github.com/neptune-ml/open-solution-value-prediction) :computer:. This solution should establish solid benchmark, as well as provide good base for your custom ideas and experiments. We care about clean code :smiley:
-1. We are opening our experiments as well: everybody can have **live preview** on our experiments, parameters, code, etc. Check: [Santander-Value-Prediction-Challenge](https://app.neptune.ml/neptune-ml/Santander-Value-Prediction-Challenge) :chart_with_upwards_trend:.
+1. We are opening our experiments as well: everybody can have **live preview** on our experiments, parameters, code, etc. Check: [Santander-Value-Prediction-Challenge :chart_with_upwards_trend:](https://app.neptune.ml/neptune-ml/Santander-Value-Prediction-Challenge) and screens below.
+
+| LightGBM train and validation performance on folds :bar_chart: | LightGBM experiment logged values :bar_chart: |
+|:---|:---|
+|[![train-validation-results-on-folds](https://gist.githubusercontent.com/kamil-kaczmarek/b3b939797fb39752c45fdadfedba3ed9/raw/159817acd944dbd3b5f9f55bdcc0749c18ce1b72/vp-1.png)](https://app.neptune.ml/-/dashboard/experiment/b540e70a-d7e5-444e-bd6f-a56d151ed61f) | [![LightGBM-learning-curves](https://gist.githubusercontent.com/kamil-kaczmarek/b3b939797fb39752c45fdadfedba3ed9/raw/159817acd944dbd3b5f9f55bdcc0749c18ce1b72/vp-2.png)](https://app.neptune.ml/-/dashboard/experiment/b540e70a-d7e5-444e-bd6f-a56d151ed61f) |
 
 ## Disclaimer
 In this open source solution you will find references to the [neptune.ml](https://neptune.ml). It is free platform for community Users, which we use daily to keep track of our experiments. Please note that using neptune.ml is not necessary to proceed with this solution. You may run it as plain Python script :wink:.
