@@ -69,17 +69,16 @@ parameters:
   lgbm__metric: rmse
   lgbm__number_boosting_rounds: 10000
   lgbm__early_stopping_rounds: 1000
-  lgbm__learning_rate: 0.001
-  lgbm__num_leaves: 16
+  lgbm__learning_rate: 0.01
+  lgbm__num_leaves: 50
   lgbm__max_depth: -1
-  lgbm__min_child_samples: 1
-  lgbm__min_split_gain: 0.0
+  lgbm__min_child_samples: 5
+  lgbm__min_split_gain: 0
   lgbm__max_bin: 300
   lgbm__subsample: 1.0
   lgbm__subsample_freq: 1
-  lgbm__colsample_bytree: 0.1
-  lgbm__min_child_weight: 10
-  lgbm__reg_lambda: 0.1
+  lgbm__colsample_bytree: 0.05
+  lgbm__reg_lambda: 1
   lgbm__reg_alpha: 0.0
   lgbm__scale_pos_weight: 1
   lgbm__zero_as_missing: False

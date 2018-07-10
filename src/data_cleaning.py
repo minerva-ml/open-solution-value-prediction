@@ -87,9 +87,9 @@ class DummiesMissing(BaseTransformer):
         return {'categorical_features': X_is_missing}
 
 
-class ColumnSort(BaseTransformer):
+class CorrFilter(BaseTransformer):
     def __init__(self):
-        self.sorted_columns = None
+        self.cols_to_keep = []
 
     def fit(self, X, y, **kwargs):
         col_correlations = []
@@ -99,14 +99,23 @@ class ColumnSort(BaseTransformer):
                 correlation = 0
             col_correlations.append((col, correlation))
         col_correlations = sorted(col_correlations, key=lambda x: abs(x[1]), reverse=True)
-        self.sorted_columns = [name for name, val in col_correlations]
+
+        # for col, val in col_correlations:
+        #     self.cols_to_keep.append(col)
+        #     if val < 0:
+        #         break
+        for col, val in col_correlations:
+            if val < 0:
+                continue
+            else:
+                self.cols_to_keep.append(col)
         return self
 
     def transform(self, X, **kwargs):
-        return {'X': X[self.sorted_columns]}
+        return {'X': X[self.cols_to_keep]}
 
     def load(self, filepath):
-        self.sorted_columns = joblib.load(filepath)
+        self.cols_to_keep = joblib.load(filepath)
 
     def persist(self, filepath):
-        joblib.dump(self.sorted_columns, filepath)
+        joblib.dump(self.cols_to_keep, filepath)

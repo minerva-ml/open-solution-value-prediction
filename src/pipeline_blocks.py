@@ -80,9 +80,16 @@ def exp_target(model_output, config, suffix, **kwargs):
 
 
 def data_cleaning_v1(config, train_mode, suffix, **kwargs):
+    corr_filter = Step(name='corr_filter{}'.format(suffix),
+                       transformer=dc.CorrFilter(),
+                       input_data=['input'],
+                       adapter=Adapter({'X': E('input', 'X'),
+                                        'y': E('input', 'y')}),
+                       experiment_directory=config.pipeline.experiment_directory, **kwargs)
+
     drop_constant = Step(name='drop_constant{}'.format(suffix),
                          transformer=dc.VarianceThreshold(**config.variance_threshold),
-                         input_data=['input'],
+                         input_steps=[corr_filter],
                          experiment_directory=config.pipeline.experiment_directory, **kwargs)
 
     drop_duplicate = Step(name='drop_duplicate{}'.format(suffix),
@@ -100,10 +107,15 @@ def data_cleaning_v1(config, train_mode, suffix, **kwargs):
                         experiment_directory=config.pipeline.experiment_directory, **kwargs)
 
     if train_mode:
+        corr_filter_valid = Step(name='corr_filter_valid{}'.format(suffix),
+                                 transformer=corr_filter,
+                                 input_data=['input'],
+                                 adapter=Adapter({'X': E('input', 'X_valid')}),
+                                 experiment_directory=config.pipeline.experiment_directory, **kwargs)
+
         drop_constant_valid = Step(name='drop_constant_valid{}'.format(suffix),
                                    transformer=drop_constant,
-                                   input_data=['input'],
-                                   adapter=Adapter({'X': E('input', 'X_valid')}),
+                                   input_steps=[corr_filter_valid],
                                    experiment_directory=config.pipeline.experiment_directory, **kwargs)
 
         drop_duplicate_valid = Step(name='drop_duplicate_valid{}'.format(suffix),
@@ -150,8 +162,8 @@ def data_cleaning_v2(config, train_mode, suffix, **kwargs):
 
 
 def row_aggregation_features(config, train_mode, suffix, **kwargs):
-    column_sort = Step(name='column_sort{}'.format(suffix),
-                       transformer=dc.ColumnSort(),
+    corr_filter = Step(name='corr_filter{}'.format(suffix),
+                       transformer=dc.CorrFilter(),
                        input_data=['input'],
                        adapter=Adapter({'X': E('input', 'X'),
                                         'y': E('input', 'y')}),
@@ -162,14 +174,14 @@ def row_aggregation_features(config, train_mode, suffix, **kwargs):
     for bucket_nr in bucket_nrs:
         row_agg_feature = Step(name='row_agg_feature_bucket_nr{}{}'.format(bucket_nr, suffix),
                                transformer=fe.RowAggregationFeatures(bucket_nr=bucket_nr),
-                               input_steps=[column_sort],
-                               adapter=Adapter({'X': E(column_sort.name, 'X')}),
+                               input_steps=[corr_filter],
+                               adapter=Adapter({'X': E(corr_filter.name, 'X')}),
                                experiment_directory=config.pipeline.experiment_directory, **kwargs)
         row_agg_features.append(row_agg_feature)
 
     if train_mode:
-        column_sort_valid = Step(name='column_sort_valid{}'.format(suffix),
-                                 transformer=column_sort,
+        corr_filter_valid = Step(name='corr_filter_valid{}'.format(suffix),
+                                 transformer=corr_filter,
                                  input_data=['input'],
                                  adapter=Adapter({'X': E('input', 'X_valid')}),
                                  experiment_directory=config.pipeline.experiment_directory, **kwargs)
@@ -178,8 +190,8 @@ def row_aggregation_features(config, train_mode, suffix, **kwargs):
         for bucket_nr, row_agg_feature in zip(bucket_nrs, row_agg_features):
             row_agg_feature_valid = Step(name='row_agg_feature_bucket_nr{}_valid{}'.format(bucket_nr, suffix),
                                          transformer=row_agg_feature,
-                                         input_steps=[column_sort_valid],
-                                         adapter=Adapter({'X': E(column_sort_valid.name, 'X')}),
+                                         input_steps=[corr_filter_valid],
+                                         adapter=Adapter({'X': E(corr_filter_valid.name, 'X')}),
                                          experiment_directory=config.pipeline.experiment_directory, **kwargs)
             row_agg_features_valid.append(row_agg_feature_valid)
 
