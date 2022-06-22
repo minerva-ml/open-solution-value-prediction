@@ -4,7 +4,7 @@ steppy-toolkit==0.1.5
 attrdict==2.0.0
 click==6.7
 lightgbm==2.1.1
-numpy==1.14.0
+numpy==1.22.0
 pandas==0.22.0
 pyyaml>=4.2b1
 scikit_learn==0.19.1
